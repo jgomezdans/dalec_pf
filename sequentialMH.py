@@ -150,6 +150,10 @@ def test_dalec():
     titles = ["NEE", "GPP", "Cf", "Cr", "Cw", "Clit", "Csom"]
     fig, axs = plt.subplots ( 3, 3, sharex="col", squeeze=True )
     for i, ax in enumerate ( axs.flatten() ):
-        ax.plot ( t, output[i, :], 'k-', lw=0.5 )
-        ax.set_title ( titles[i] )
+        try:
+            ax.plot ( t, output[i, :], '-', lw=0.5 )
+            ax.set_title ( titles[i] )
+            ax.set_xlim ( 1, 1096 )
+        except IndexError:
+            ax.set_visible ( False )
         
