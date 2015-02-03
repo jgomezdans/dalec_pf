@@ -71,13 +71,13 @@ def assimilate_obs (timestep, ensemble, model, model_unc,  obs, obs_unc ):
     
     
     # Get the numberof particles
-    n_particles = ensemble.shape[0]
+    n_particles, state_size= ensemble.shape
     # The assimilated state will be stored here
     x = ensemble*0. 
     # The first particle is the median of the old state to start with
     x[0,:] = np.median ( ensemble, axis=0 )
     # Also get what the LAI of the median would be, using the SLA
-    lai = x[0,2]/111.
+    lai = x[0,2]*300.*0.0001
     # Calculate the (log)likelihood
     log_prev = - np.log ( 2.*np.pi*obs_unc ) -0.5*( lai - obs)**2/obs_unc**2
     # Store the initial state
@@ -89,11 +89,11 @@ def assimilate_obs (timestep, ensemble, model, model_unc,  obs, obs_unc ):
     for particle in xrange ( 1, n_particles ):
         # Select one random particle, and advance it using the model.
         # We store the proposed state in ``proposed`` (creative, yeah?)
-        proposed = model ( ensemble[part_sel[timestep],:], timestep ) + \
+        proposed = model ( ensemble[part_sel[particle],:], timestep )[2:] + \
                     np.random.randn( state_size )*model_unc 
         # Calculate the predicted observations, using our (embarrassing) 
         # observation operator, in this case, divide by SLA
-        lai = proposed[2]/111. # Using SLA directly here...
+        lai = proposed[2]*300.*0.0001 # Using SLA directly here...
         # Calculate the (log)likelihood
         log_proposed = - np.log ( 2.*np.pi*obs_unc ) -0.5*( lai - obs)**2/obs_unc**2
         # Metropolis acceptance scheme
@@ -111,34 +111,75 @@ def assimilate_obs (timestep, ensemble, model, model_unc,  obs, obs_unc ):
     
     
 
-def sequential_mh ( n_particles, x0, \
+def sequential_mh ( x0, \
                     model, model_unc, \
                     observations, obs_unc, \
                     time_axs, obs_time ):
 
-    state_size = len( x0 )
+    n_particles, state_size = x0.shape
     ensemble = x0
+    state = np.zeros ( ( len(time_axs), n_particles, state_size ))
     for timestep in time_axs:
         # Check whether we have an observation for this time step
         if np.in1d ( timestep, obs_time ):
+            obs_loc = np.nonzero( obs_time == timestep )[0]
             state[ timestep, :, : ] = assimilate_obs ( timestep, \
                 ensemble, model, model_unc, \
-                observations[timestep], obs_unc[timestep] )
+                observations[obs_loc], obs_unc[obs_loc] )
 
         else:
             # No observation, just advance the model for all the particles
             for particle in xrange ( n_particles ):
                 state[ timestep, particle, : ] = model ( \
-                    ensemble[timestep,:], timestep ) + \
+                    ensemble[particle,:], timestep )[2:] + \
                     np.random.randn( state_size )*model_unc
         # Update the ensemble
-        ensemble[ particle, : ] = state[ timestep, particle, : ]*1.
+        ensemble = state[ timestep, :, : ]*1.
+        print timestep, ensemble.mean(axis=0)[0], ensemble.std(axis=0)[0]
+    return state
+
+def test_dowd ():
+    lat = 44.4 # Latitude
+    sla = 111.
+    params = np.array([ lat, sla, 0.0000044, 0.47, 0.31, 0.43,0.0027, \
+        0.00000206, 0.00248, 0.0228, 0.00000265 ] )
+    x0_true = ( [ 58., 102., 770., 40., 9897.] )
+    DALEC = Model ( params )
+    x0 = x0_true + np.random.randn()*x0_true/10. # 10% error
+    x0 = x0.T
+    LAI_obs = []
+    LAI_unc = []
+    LAI_time= []
+    for t in np.arange(1095):
+        nee, gpp, Cf, Cr, Cw, Clit, Csom = DALEC.run_model ( x0_true, i )
+        if t % 8 == 0:
+            u = np.random.rand()
+            if u <= 0.4:
+                # One High quality observation
+                LAI_obs.append ( Cf/sla + np.random.randn()*0.5 )
+                LAI_unc.append ( 0.5 )
+                LAI_time.append ( t )
+            elif 0.4 < u <=0.8:
+                # One low quality observation
+                LAI_obs.append ( Cf/sla + np.random.randn()*0.8 )
+                LAI_unc.append ( 0.8 )
+                LAI_time.append ( t )
+            elif u >= 0.8:
+                # No obs
+                continue
+        
+    n_particles = 500
+    model_unc = np.random.randn()*x0_true/10.
+    sequential_mh ( n_particles, x0, \
+                    DALEC, model_unc, \
+                    LAI_obs, LAI_unc, \
+                    np.arange(1095), LAI_time )
 
 def test_dalec():
     
     lat = 44.4 # Latitude
     sla = 111.
-    params = np.array([ lat, sla, 0.0000044, 0.47, 0.31, 0.43,0.0027, \
+    params = np.array([ lat, sla, 0.0000044, 0.47, 0.31, 0.43,0.027, \
         0.00000206, 0.00248, 0.0228, 0.00000265 ] )
     initial_state = ( [ 58., 102., 770., 40., 9897.] )
     DALEC = Model ( params )
@@ -156,4 +197,53 @@ def test_dalec():
             ax.set_xlim ( 1, 1096 )
         except IndexError:
             ax.set_visible ( False )
-        
+            
+            
+            
+if __name__ == "__main__":
+    lat = 44.4 # Latitude
+    sla = 300.
+    n_particles = 500
+    #params = np.array([ lat, sla, 4.4e-6, 0.47, 0.31, 0.43,0.0027, \
+        #0.00000206, 0.00248, 0.0228, 0.00000265 ] )
+    params = np.array([ lat, sla, 4.4e-6, 0.47, 0.31, 0.43,0.0010, \
+        0.00000206, 0.00248, 0.0228, 0.00000265 ] )
+
+    x0_true = np.array( [ 58., 102., 770., 40., 9897.] )
+    
+    x0 = x0_true[:, None] + \
+        np.random.randn(5, n_particles)*x0_true[:,None]/10. # 10% error
+    x0 = x0.T
+    DALEC = Model ( params )
+    LAI_obs = []
+    LAI_unc = []
+    LAI_time= []
+    x = []
+    Cf, Cr, Cw, Clit, Csom = x0_true
+    for t in np.arange(1095):
+        nee, gpp, Cf, Cr, Cw, Clit, Csom = DALEC.run_model ( [Cf, Cr, Cw, Clit, Csom], t )
+        x.append ( Cf )
+        if t % 8 == 0:
+            u = np.random.rand()
+            if u <= 0.4:
+                # One High quality observation
+                LAI_obs.append (  max ( 0.1, Cf*sla*0.0001  + np.random.randn()*0.01 ) )
+                LAI_unc.append ( 0.5 )
+                LAI_time.append ( t )
+            elif 0.4 < u <=0.8:
+                # One low quality observation
+                LAI_obs.append ( max ( 0.1, Cf*sla*0.0001  + np.random.randn()*0.05 ))
+                LAI_unc.append ( 0.8 )
+                LAI_time.append ( t )
+            elif u >= 0.8:
+                # No obs
+                continue
+            
+    plt.plot( LAI_time, LAI_obs, '-o')
+    plt.legend(loc='best')
+    plt.show()
+    model_unc = np.random.randn()*x0_true/10.
+    results = sequential_mh ( x0, \
+                    DALEC.run_model, model_unc, \
+                    LAI_obs, LAI_unc, \
+                    np.arange(1095), LAI_time )
