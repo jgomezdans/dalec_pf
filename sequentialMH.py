@@ -90,7 +90,7 @@ def assimilate_obs (timestep, ensemble, model, model_unc,  obs, obs_unc ):
         # Select one random particle, and advance it using the model.
         # We store the proposed state in ``proposed`` (creative, yeah?)
         proposed = model ( ensemble[part_sel[timestep],:], timestep ) + \
-                    np.random.randn( state_size )*model_unc )
+                    np.random.randn( state_size )*model_unc 
         # Calculate the predicted observations, using our (embarrassing) 
         # observation operator, in this case, divide by SLA
         lai = proposed[2]/111. # Using SLA directly here...
@@ -146,9 +146,9 @@ def test_dalec():
     for i in xrange(1095):
         nee, gpp, Cf, Cr, Cw, Clit, Csom = DALEC.run_model ( initial_state, i )
         output[:,i] = np.array([nee, gpp, Cf, Cr, Cw, Clit, Csom])
-    t = np.arange ( 1096 )
+    t = np.arange ( 1095 ) + 1
     titles = ["NEE", "GPP", "Cf", "Cr", "Cw", "Clit", "Csom"]
-    fig, axs = plt.subplots ( 3, 3, sharex="cols", squeeze=True )
+    fig, axs = plt.subplots ( 3, 3, sharex="col", squeeze=True )
     for i, ax in enumerate ( axs.flatten() ):
         ax.plot ( t, output[i, :], 'k-', lw=0.5 )
         ax.set_title ( titles[i] )
