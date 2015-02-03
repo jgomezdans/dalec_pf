@@ -133,7 +133,7 @@ def sequential_mh ( n_particles, x0, \
         # Update the ensemble
         ensemble[ particle, : ] = state[ timestep, particle, : ]*1.
 
-if __name__ == "__main__":
+def test_dalec():
     
     lat = 44.4 # Latitude
     sla = 111.
@@ -145,3 +145,10 @@ if __name__ == "__main__":
     for i in xrange(1095):
         nee, gpp, Cf, Cr, Cw, Clit, Csom = DALEC.run_model ( initial_state, i )
         output[:,i] = np.array([nee, gpp, Cf, Cr, Cw, Clit, Csom])
+    t = np.arange ( 1096 )
+    titles = ["NEE", "GPP", "Cf", "Cr", "Cw", "Clit", "Csom"]
+    fig, axs = plt.subplots ( 3, 3, sharex="cols", squeeze=True )
+    for i, ax in enumerate ( axs.flatten() ):
+        ax.plot ( t, output[i, :], 'k-', lw=0.5 )
+        ax.set_title ( titles[i] )
+        
