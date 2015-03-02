@@ -16,7 +16,8 @@ def acm ( lat, lai, doy, tmx, tmn, irad,  ca, nitrogen, \
             4.309, 0.060, 1.062, 0.0006]),
             psid=-2., rtot=1.):
     """
-    The ACM model. 
+    The ACM model. The default parameters in ``a`` are taken from
+    Williams et al (2005), 
     """
     tmpr = 0.5 * (tmx - tmn )
     
@@ -97,6 +98,7 @@ def dalec ( doy, tmn, tmp, tmx, irad, ca, nitrogen, \
     return ( nee, gpp, Cf, Cr, Cw, Clit, Csom, lai )
     
 if __name__ == "__main__":
+    # Meteolius First Young Pine
     driver_data = np.loadtxt ( "dalec_drivers.OREGON.no_obs.dat" )
     doys = driver_data[ :, 0 ] 
     temp = driver_data [ :, 1] 
@@ -115,6 +117,7 @@ if __name__ == "__main__":
     Cr = 102
     Clit = 40
     Csom = 9897
+    # These parameters are from Williams et al (2005)
     p_vect=np.array([ 0.0000044, 0.47, 0.31, 0.43,0.0027, 0.00000206, 0.00248, \
                 0.0228, 0.00000265 ] )
 
