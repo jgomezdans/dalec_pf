@@ -8,9 +8,6 @@ That's all folks.
 import numpy as np
 import matplotlib.pyplot as plt
 
-
-
-
 def acm ( lat, lai, doy, tmx, tmn, irad,  ca, nitrogen, \
             a = np.array( [ 2.155, 0.0142, 217.9, 0.980, 0.155, 2.653, \
             4.309, 0.060, 1.062, 0.0006]),
@@ -34,16 +31,11 @@ def acm ( lat, lai, doy, tmx, tmn, irad,  ca, nitrogen, \
         dayl = 0.
     else:
         dayl = m
-    #dayl = m
-    #dayl[dayl >= 1.0] = 24.0
-    #dayl[dayl <= -1.0] = 0.0
+        
     if dayl > -1. or dayl < 1.:
         dayl = 24.*np.arccos(-m)/np.pi
     else:
-        dayl
-    #dayl = np.where(np.logical_or(dayl < 1.0, dayl > -1.0), \
-        #24.0 * np.arccos(-m) / np.pi, dayl )
-    
+        dayl    
    
 
     cps = e0 * irad * gs * (ca - ci) / (e0 * irad + gs * (ca - ci))
@@ -52,7 +44,7 @@ def acm ( lat, lai, doy, tmx, tmn, irad,  ca, nitrogen, \
     return gpp
     
 def dalec ( doy, tmn, tmp, tmx, irad, ca, nitrogen, \
-            lat, sla, p, \
+            lat, lma, p, \
             Cf, Cr, Cw, Clit, Csom, psid=-2, rtot=1, a=None, lai=None ):
     """
     DALEC, the function
@@ -65,7 +57,7 @@ def dalec ( doy, tmn, tmp, tmx, irad, ca, nitrogen, \
     
     """
     if lai is None:
-        lai = max ( 0.1, Cf/sla ) # LAI based on foliar pool
+        lai = max ( 0.1, Cf/lma ) # LAI based on foliar pool
     
     if a is None:
         gpp = acm ( lat, lai, doy, tmx, tmn, irad, ca, nitrogen, \
@@ -111,15 +103,15 @@ if __name__ == "__main__":
     rtot = driver_data [ :, 7]
     nitrogen = driver_data [ :, 8]
     lat = 44.4
-    sla = 111.
-    Cf = 58
-    Cw = 770
-    Cr = 102
-    Clit = 40
-    Csom = 9897
+    lma = 111.
+    Cf = 57.705
+    Cw = 769.86
+    Cr = 102.00
+    Clit = 40.449
+    Csom = 9896.7
     # These parameters are from Williams et al (2005)
-    p_vect=np.array([ 0.0000044, 0.47, 0.31, 0.43,0.0027, 0.00000206, 0.00248, \
-                0.0228, 0.00000265 ] )
+    p_vect=np.array([ 4.41e-6, 0.47, 0.3150, 0.4344,0.002665, 2.06e-6, 2.48e-3, \
+                2.28e-2, 2.65e-6 ] )
 
     GPP = []
     NEE = []
@@ -127,7 +119,7 @@ if __name__ == "__main__":
     for (i, doy ) in enumerate ( doys ) :
         ( nee, gpp, Cf, Cr, Cw, Clit, Csom, lai ) = dalec ( doy, \
             tmn[i], tmp[i], tmx[i], irad[i], ca[i], nitrogen[i], \
-            lat, sla, p_vect, \
+            lat, lma, p_vect, \
             Cf, Cr, Cw, Clit, Csom, psid=psid[i], rtot=rtot[i] )
         NEE.append ( nee )
         CF.append ( Cf )
