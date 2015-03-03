@@ -226,10 +226,13 @@ if __name__ == "__main__":
 
     lb = [ np.percentile(results[i,:,0]/110, 5) for i in xrange(1095)]
     ub = [ np.percentile(results[i,:,0]/110, 95) for i in xrange(1095)]
-    plt.fill_between ( np.arange(1095), lb, ub, color=colour_list[0], alpha=0.2, label="5-95% CI" )
+    plt.fill_between ( np.arange(1095), lb, ub, color=colour_list[0], alpha=0.2  )
+    plt.plot([], [], color=colour_list[0], alpha=0.2, linewidth=10, label="5-95% CI")
+    
     lb = [ np.percentile(results[i,:,0]/110, 25) for i in xrange(1095)]
     ub = [ np.percentile(results[i,:,0]/110, 75) for i in xrange(1095)]
-    plt.fill_between ( np.arange(1095), lb,ub, color=colour_list[0], alpha=0.6, label="25-75% CI")
+    plt.fill_between ( np.arange(1095), lb,ub, color=colour_list[0], alpha=0.6)
+    plt.plot([], [], color=colour_list[0], alpha=0.6, linewidth=10, label="25-75% CI")
     m = [ np.percentile(results[i,:,0]/110, 50) for i in xrange(1095)]
     plt.plot(np.arange(1095), m, ls='-', c=colour_list[1], lw=1.8, label="Mean DA state" )
     plt.plot(lai_time, lai_obs, 'o', c=colour_list[2], label="MODIS LAI")
