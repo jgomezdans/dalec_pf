@@ -8,6 +8,8 @@ That's all folks.
 import numpy as np
 import matplotlib.pyplot as plt
 
+from plot_utils import pretty_axes
+
 def acm ( lat, lai, doy, tmx, tmn, irad,  ca, nitrogen, \
             a = np.array( [ 2.155, 0.0142, 217.9, 0.980, 0.155, 2.653, \
             4.309, 0.060, 1.062, 0.0006]),
@@ -228,22 +230,10 @@ def test_dalec():
     fig, axs = plt.subplots (nrows=2, ncols=3, figsize=(10,8) )
     
     for i, ax in enumerate(axs.flatten() ):
+        pretty_axes ( ax )
         if i < 5:
             ax.plot ( tx, outputs[5+i,:], '-' )
             ax.set_title (pools[i], fontsize=12 )
-            ax.spines["top"].set_visible(False)  
-            ax.spines["bottom"].set_visible(True)  
-            ax.spines["right"].set_visible(False)  
-            
-            ax.spines["left"].set_visible(True)  
-
-            # Ensure that the axis ticks only show up on the bottom and left of the plot.  
-            # Ticks on the right and top of the plot are generally unnecessary chartjunk.  
-            ax.get_xaxis().tick_bottom()  
-            ax.get_yaxis().tick_left()  
-
-            ax.tick_params(axis="both", which="both", bottom="off", top="off",  
-                    labelbottom="on", left="off", right="off", labelleft="on")  
             
             
         else:
