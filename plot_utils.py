@@ -3,6 +3,30 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 
+def get_observations ( fname="dalec_drivers.OREGON.MW_obs.dat" ):
+    """This is an utility function that extracts the observations 
+    from the original ASCII file.
+    """
+    fluxes = {}
+    for flux in ["lai", "gpp","nee", "ra", "af", "aw", "ar", "lf", "lw","lr","cf","cw","cr",\
+        "rh1","rh2","decomp", "cl", "rs","rt", "npp","nep","agb","tbm"]:
+        fp = open( fname, 'r')
+        this_flux = []
+        for i, line in enumerate( fp ):
+            sline = line.split()
+            if sline.count( flux ) > 0:
+                j = sline.index( flux )
+                this_flux.append ( [ float(i), float(sline[j+1]), float(sline[j+2] ) ] )
+        fluxes[flux] = np.array( this_flux )
+        fp.close()
+
+    for flux in fluxes.iterkeys():
+        if len( fluxes[flux] ) > 0:
+            print "Saving obs stream: %s (%d obs)" % ( flux, len( fluxes[flux] ) )
+            np.savetxt ( "meas_flux_%s.txt.gz" % flux, fluxes[flux] )
+
+
+
 def plot_config ():
     """Update the MPL configuration"""
     config_json='''{
