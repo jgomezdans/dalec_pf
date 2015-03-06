@@ -27,7 +27,16 @@ def plot_config ():
             "axes.titlesize": "x-large",
             "svg.embed_char_paths": "path",
             "xtick.direction" : "out",
-            "ytick.direction" : "out"
+            "ytick.direction" : "out",
+            "xtick.color": "#262626",
+            "ytick.color": "#262626",
+            "axes.edgecolor": "#262626",
+            "axes.labelcolor": "#262626",
+            "axes.labelsize": 12,
+            "font.size": 12,
+            "legend.fontsize": 12,
+            "xtick.labelsize": 12,
+            "ytick.labelsize": 12
     }
     '''
     s = json.loads ( config_json )
@@ -46,6 +55,9 @@ def pretty_axes( ax ):
 
     ax.get_xaxis().tick_bottom()  
     ax.get_yaxis().tick_left()  
+    loc = plt.MaxNLocator( 6 )
+    ax.yaxis.set_major_locator( loc )
+    
 
     ax.tick_params(axis="both", which="both", bottom="off", top="off",  
             labelbottom="on", left="off", right="off", labelleft="on")  
