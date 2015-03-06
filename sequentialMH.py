@@ -2,15 +2,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import brewer2mpl
-from dalec import dalec
 
-def simpleaxis(ax):
-    """ Remove the top line and right line on the plot face """
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.get_xaxis().tick_bottom()
-    ax.get_yaxis().tick_left()
+from dalec import dalec
+from plot_utils import pretty_axes
     
+def safe_log(x, minval=0.0000000001):
+    """This functions just does away with numerical 
+    warnings."""
+    return np.log(x.clip(min=minval))
+
 class Model ( object ):
     """A class for updating the DALEC model"""
     def __init__ ( self, model_params, drivers="dalec_drivers.OREGON.no_obs.dat" ):
@@ -63,7 +63,7 @@ class Model ( object ):
         # Extract the state components from the input
         Cf, Cr, Cw, Clit, Csom = x
         # Run DALEC
-        ( nee, gpp, Cf, Cr, Cw, Clit, Csom, lai ) = dalec ( doy, \
+        ( nee, gpp, Ra, Rh1, Rh2, Cf, Cr, Cw, Clit, Csom, lai ) = dalec ( doy, \
             tmn, tmp, tmx, irad, ca, nitro, \
             self.model_params[0], self.model_params[1], \
             self.model_params[2:], \
@@ -74,6 +74,52 @@ class Model ( object ):
                 Clit, Csom ] )
 
         return nee, gpp, Cf, Cr, Cw, Clit, Csom
+
+    def run_model_flux ( self, x, i, store=False ):
+        """Runs the model forward to ``i+1`` using input state ``x``, 
+        assuming parameter vectors stored in the class. The output
+        is returned to the user, but also stored in ``self.previous_state``,
+        if you told the method to store the data. This is an option as
+        one might be using this code within an ensemble.
+        
+        NOTE
+        ----
+        Not all fluxes are returned! For example, respiration and litter
+        fluxes are ignored. Feel free to add them in.
+        
+        Parameters
+        -----------
+        x: iter
+            The state, defined as Cf, Cr, Cw, Clit, Csom
+            
+        i: int
+            The time step
+            
+        Returns
+        --------
+        nee, gpp, Cf, Cr, Cw, Clit, Csom 
+            A tuple containing the updated state, as well as the fluxes
+        """
+        # Extract drivers...
+
+        doy, temp, tmx, tmn, irad, psid, ca, rtot, nitro = self.drivers[i,:]
+        tmp = 0.5* (tmx-tmn)
+
+        # Extract the state components from the input
+        Cf, Cr, Cw, Clit, Csom = x
+        # Run DALEC
+        ( nee, gpp, Ra, Rh1, Rh2, Cf, Cr, Cw, Clit, Csom, lai ) = dalec ( doy, \
+            tmn, tmp, tmx, irad, ca, nitro, \
+            self.model_params[0], self.model_params[1], \
+            self.model_params[2:], \
+            Cf, Cr, Cw, Clit, Csom, psid=psid, rtot=rtot )
+        # Do we store the output?
+        if store:
+            self.previous_state.append ( [ nee, gpp, Cf, Cr, Cw, \
+                Clit, Csom ] )
+
+        return ( nee, gpp, Ra, Rh1, Rh2, Cf, Cr, Cw, Clit, Csom, lai )
+
 
 def read_LAI_obs ( fname="Metolius_MOD15_LAI.txt"):
     """This function reads the LAI data, and rejiggles it so that it is
@@ -104,7 +150,7 @@ def assimilate_obs (timestep, ensemble, model, model_unc,  obs, obs_unc ):
     # Also get what the LAI of the median would be, using the SLA
     lai = x[0,0]/110.
     # Calculate the (log)likelihood
-    log_prev = - np.log ( 2.*np.pi*obs_unc ) -0.5*( lai - obs)**2/obs_unc**2
+    log_prev = - safe_log ( 2.*np.pi*obs_unc ) -0.5*( lai - obs)**2/obs_unc**2
     # Store the initial state
     proposed_prev = x[0,:]
     # Next, we have a way of selecting random particles from the array
@@ -115,7 +161,11 @@ def assimilate_obs (timestep, ensemble, model, model_unc,  obs, obs_unc ):
         # Select one random particle, and advance it using the model.
         # We store the proposed state in ``proposed`` (creative, yeah?)
         proposed = model ( ensemble[part_sel[particle],:], timestep )[2:] + \
-                    np.random.randn( state_size )*model_unc 
+                    np.random.randn( state_size )*model_unc
+        while np.all ( proposed < 0 ):
+            # Clips -ve values, that make no sense here
+            proposed = model ( ensemble[part_sel[particle],:], timestep )[2:] + \
+                    np.random.randn( state_size )*model_unc
         # Calculate the predicted observations, using our (embarrassing) 
         # observation operator, in this case, divide by SLA
         lai = proposed[0]/110. # Using SLA directly here...
@@ -124,7 +174,7 @@ def assimilate_obs (timestep, ensemble, model, model_unc,  obs, obs_unc ):
             log_proposed = -np.inf
         else:
             # Calculate the (log)likelihood
-            log_proposed = - np.log ( 2.*np.pi*obs_unc ) -0.5*( lai - obs)**2/obs_unc**2
+            log_proposed = - safe_log ( 2.*np.pi*obs_unc ) -0.5*( lai - obs)**2/obs_unc**2
         # Metropolis acceptance scheme
         alpha = min ( 1, np.exp ( log_proposed - log_prev ) )
         u = np.random.rand()
@@ -169,12 +219,78 @@ def sequential_mh ( x0, \
                     np.random.randn( state_size )*model_unc
         # Update the ensemble
         ensemble = state[ timestep, :, : ]*1.
-        print timestep, ensemble.mean(axis=0)[0], ensemble.std(axis=0)[0]
+        
     return state
 
-            
-            
-if __name__ == "__main__":
+
+def plot_pools_fluxes ( model, states, \
+    pools = [r'$C_f$',r'$C_r$',r'$C_w$',r'$C_{lit}$',r'$C_{SOM}$'] ):
+    
+    
+    fwd_model = np.zeros(( states.shape[0], states.shape[1], 11))
+    # ( nee, gpp, Ra, Rh1, Rh2, Cf, Cr, Cw, Clit, Csom, lai )
+    clist = ["#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", \
+             "#FFD92F", "#E5C494", "#B3B3B3" ]
+
+    for i in xrange ( states.shape[0] ):
+        for p in xrange ( states.shape[1] ):
+            fwd_model[i, p, :] = model.run_model_flux ( states[i,p,:], i )
+
+    fig1, axs = plt.subplots (nrows=5, ncols=1, sharex="col", figsize=(13,7) )
+    tx = np.arange ( states.shape[0] )
+    fluxes=["NEE", "GPP", "Ra", "Rh1", "Rh2"] + pools
+    for i, ax in enumerate(axs.flatten() ):
+        pretty_axes ( ax )
+        ax.plot ( tx, fwd_model[:,:, i].mean(axis=1), '-', color=clist[i] )
+        
+        lb = [ np.percentile(fwd_model[j,:,i], 5) for j in xrange(1095)]
+        ub = [ np.percentile(fwd_model[j,:,i], 95) for j in xrange(1095)]
+        ax.fill_between ( np.arange(1095), lb, ub,color=clist[i],  alpha=0.3  )
+        ax.plot([], [],  color=clist[i], alpha=0.3, linewidth=10, label="5-95% CI")
+        lb = [ np.percentile(fwd_model[j,:,i], 25) for j in xrange(1095)]
+        ub = [ np.percentile(fwd_model[j,:,i], 75) for j in xrange(1095)]
+        ax.fill_between ( np.arange(1095), lb, ub,color=clist[i],  alpha=0.7  )
+        ax.plot([], [],  color=clist[i], alpha=0.7, linewidth=10, label="25-75% CI")
+        ax.set_title (fluxes[i], fontsize=12 )            
+        ax.set_xlim ( 0, 1100 )
+        ax.xaxis.set_ticklabels ([])
+        ax.set_ylabel(r'$[gCm^{-2}d^{-1}]$')
+        pretty_axes ( ax )
+    ax.xaxis.set_ticks([1,365, 365*2, 365*3])
+    ax.xaxis.set_ticklabels([1,365, 365*2, 365*3])
+    ax.set_xlabel("Days after 01/01/2000")
+    plt.subplots_adjust ( wspace=0.3 )
+
+
+    fig2, axs = plt.subplots (nrows=5, ncols=1, figsize=(13,7) )
+        
+    for i, ax in enumerate(axs.flatten() ):
+        pretty_axes ( ax )
+        ax.plot ( tx, fwd_model[:, :,5+i].mean(axis=1), '-', color=clist[i] )
+        
+        lb = [ np.percentile(fwd_model[j,:,i+5], 5) for j in xrange(1095)]
+        ub = [ np.percentile(fwd_model[j,:,i+5], 95) for j in xrange(1095)]
+        ax.fill_between ( np.arange(1095), lb, ub,color=clist[i],  alpha=0.2  )
+        ax.plot([], [],  color=clist[i], alpha=0.2, linewidth=10, label="5-95% CI")
+        lb = [ np.percentile(fwd_model[j,:,i+5], 25) for j in xrange(1095)]
+        ub = [ np.percentile(fwd_model[j,:,i+5], 75) for j in xrange(1095)]
+        ax.fill_between ( np.arange(1095), lb, ub,color=clist[i],  alpha=0.7  )
+        ax.plot([], [],  color=clist[i], alpha=0.7, linewidth=10, label="25-75% CI")
+        ax.set_ylabel(r'$[gCm^{-2}]$')
+
+
+        ax.set_title (pools[i], fontsize=12 )            
+        ax.set_xlim ( 0, 1100 )
+        ax.xaxis.set_ticklabels ([])
+        pretty_axes ( ax )
+    ax.xaxis.set_ticks([1,365, 365*2, 365*3])
+    ax.xaxis.set_ticklabels([1,365, 365*2, 365*3])
+    plt.subplots_adjust ( wspace=0.3 )
+    ax.set_xlabel("Days after 01/01/2000")
+    return fig1, fig2, fwd_model
+
+def assimilate( sla=110, n_particles=500, Cf0=58., Cr0=102., Cw0=770.,\
+                Clit0=40., Csom0=9897., model_unc=np.array([5, 10, 77, 4, 90]) ):
     lat = 44.4 # Latitude
     sla = 110.
     n_particles = 500
@@ -184,16 +300,16 @@ if __name__ == "__main__":
         0.00000206, 0.00248, 0.0228, 0.00000265 ] )
 
     # Initial pool composition
-    x0 = np.array( [ 58., 102., 770., 40., 9897.] )
+    x0 = np.array( [ Cf0, Cr0, Cw0, Clit0, Csom0 ] )
     
     DALEC = Model ( params )
     
-    model_unc = np.random.randn()*x0/10.
+    
     
     lai_time, lai_obs, lai_unc = read_LAI_obs ()
     
     s0 = x0[:, None] + \
-       np.random.randn(5, n_particles)*x0[:,None]*0.1 # 10% error
+       np.random.randn(5, n_particles)*model_unc[:, None]
     s0 = s0.T
     
     results = sequential_mh ( s0, \
@@ -201,45 +317,30 @@ if __name__ == "__main__":
                     lai_obs, lai_unc, \
                     np.arange(1095), lai_time )
     
-    colour_list = brewer2mpl.get_map('Set2', 'qualitative', 8).mpl_colors
+    
     fig = plt.figure(figsize=(13,7))
     fig.subplots_adjust(hspace=0.05)
     fig.subplots_adjust(wspace=0.08) 
-    plt.rcParams['axes.labelsize'] = 12
-    plt.rcParams['font.size'] = 12
-    plt.rcParams['legend.fontsize'] = 12
-    plt.rcParams['xtick.labelsize'] = 12
-    plt.rcParams['ytick.labelsize'] = 12
-    
-    almost_black = '#262626'
-    # change the tick colors also to the almost black
-    plt.rcParams['ytick.color'] = almost_black
-    plt.rcParams['xtick.color'] = almost_black
-
-    # change the text colors also to the almost black
-    plt.rcParams['text.color'] = almost_black
-    
-    # Change the default axis colors from black to a slightly lighter black,
-    # and a little thinner (0.5 instead of 1)
-    plt.rcParams['axes.edgecolor'] = almost_black
-    plt.rcParams['axes.labelcolor'] = almost_black
-
+    ax = plt.gca()
+    clist = ["#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", \
+             "#FFD92F", "#E5C494", "#B3B3B3" ]
     lb = [ np.percentile(results[i,:,0]/110, 5) for i in xrange(1095)]
     ub = [ np.percentile(results[i,:,0]/110, 95) for i in xrange(1095)]
-    plt.fill_between ( np.arange(1095), lb, ub, color=colour_list[0], alpha=0.2  )
-    plt.plot([], [], color=colour_list[0], alpha=0.2, linewidth=10, label="5-95% CI")
+    plt.fill_between ( np.arange(1095), lb, ub,color=clist[0],  alpha=0.2  )
+    plt.plot([], [],  color=clist[0], alpha=0.2, linewidth=10, label="5-95% CI")
     
     lb = [ np.percentile(results[i,:,0]/110, 25) for i in xrange(1095)]
     ub = [ np.percentile(results[i,:,0]/110, 75) for i in xrange(1095)]
-    plt.fill_between ( np.arange(1095), lb,ub, color=colour_list[0], alpha=0.6)
-    plt.plot([], [], color=colour_list[0], alpha=0.6, linewidth=10, label="25-75% CI")
+    plt.fill_between ( np.arange(1095), lb,ub,  color=clist[0], alpha=0.6)
+    plt.plot([], [], alpha=0.6, linewidth=10, color=clist[0], label="25-75% CI")
     m = [ np.percentile(results[i,:,0]/110, 50) for i in xrange(1095)]
-    plt.plot(np.arange(1095), m, ls='-', c=colour_list[1], lw=1.8, label="Mean DA state" )
-    plt.plot(lai_time, lai_obs, 'o', c=colour_list[2], label="MODIS LAI")
-    plt.vlines ( lai_time, lai_obs - lai_unc, lai_obs + lai_unc )
+    plt.plot(np.arange(1095), m, ls='-', color=clist[1], lw=1.8, label="Mean DA state" )
+    plt.plot(lai_time, lai_obs, 'o', color=clist[2],label="MODIS LAI")
+    plt.vlines ( lai_time, lai_obs - lai_unc, lai_obs + lai_unc,color=clist[2], )
     plt.xlabel("Days after 01/01/2000")
     plt.ylabel("LAI $[m^2\cdot m^{-2}]$")
     plt.legend(loc="upper left", fancybox=True, numpoints=1 )
     ax = plt.gca()
-    simpleaxis ( ax )
-    plt.show()
+    pretty_axes ( ax )
+    fig2, fig3, fwd_model = plot_pools_fluxes ( DALEC, results )
+    return fig, fig2, fig3, fwd_model
