@@ -133,8 +133,10 @@ def dalec ( doy, tmn, tmp, tmx, irad, ca, nitrogen, \
         
     Returns
     ---------
-    NEE, GPP, Cf, Cr, Cw, Clit, Csom, LAI
-    """
+    
+    ( nee, gpp, Ra, Rh1, Rh2, Af, Ar, Aw, Lw, Lr, D, \
+            Cf, Cr, Cw, Clit, Csom, lai )    """
+            
     if lai is None:
         lai = max ( 0.1, Cf/lma ) # LAI based on foliar pool
     
@@ -166,7 +168,8 @@ def dalec ( doy, tmn, tmp, tmx, irad, ca, nitrogen, \
     
     nee = Ra+Rh1+Rh2-gpp
     
-    return ( nee, gpp, Ra, Rh1, Rh2, Cf, Cr, Cw, Clit, Csom, lai )
+    return ( nee, gpp, Ra, Rh1, Rh2, Af, Ar, Aw, Lw, Lr, D, \
+            Cf, Cr, Cw, Clit, Csom, lai )
     
 def test_dalec():
     # Meteolius First Young Pine
