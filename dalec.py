@@ -205,35 +205,11 @@ def test_dalec():
          outputs[:, i] =  ( nee, gpp, Ra, Rh1, Rh2, Af, Ar, Aw, Lw, Lr, D, \
             Cf, Cr, Cw, Clit, Csom, lai )
     tx = np.arange ( len(doys))
-    #####plt.figure(figsize=(8,8))
-    #####plt.plot ( tx, outputs[0,:], '-', label="NEE" )
-    #####plt.plot ( tx, outputs[1,:], '-', label="GPP" )
-    #####plt.plot ( tx, outputs[2,:], '-', label="Ra" )
-    #####plt.plot ( tx, outputs[3,:], '-', label="Rh1" )
-    #####plt.plot ( tx, outputs[4,:], '-', label="Rh2" )
-    #####plt.plot ( tx, tx*0., '-', lw=1.5, c="0.8" )
-    #####plt.xlabel("Days after 01/01/2000")
-    #####plt.ylabel ("Flux magnitude $[gCm^{-2}d^{-1}]$" )
-    #####plt.title ( "DALEC calculated fluxes" )
-    #####plt.legend ( loc="best", fancybox=True )
-    #####ax = plt.gca()
-    #####ax.spines["top"].set_visible(False)  
-    #####ax.spines["bottom"].set_visible(True)  
-    #####ax.spines["right"].set_visible(False)  
-    
-    #####ax.spines["left"].set_visible(True)  
-
-    ######Ensure that the axis ticks only show up on the bottom and left of the plot.  
-    ######Ticks on the right and top of the plot are generally unnecessary chartjunk.  
-    #####ax.get_xaxis().tick_bottom()  
-    #####ax.get_yaxis().tick_left()  
-
-    #####ax.tick_params(axis="both", which="both", bottom="off", top="off",  
-            #####labelbottom="on", left="off", right="off", labelleft="on")  
 
     pools = [r'$GPP$, $NEE$', '$Ra$', '$Rh_1$','$Rh_2$', '$A_f$','$A_r$', \
         '$A_w$','$L_f$', '$L_r$', '$L_w$', '$D$',\
         r'$C_f$',r'$C_r$',r'$C_w$',r'$C_{lit}$',r'$C_{SOM}$']
+
     fig, axs = plt.subplots (nrows=3, ncols=5, sharex="col", figsize=(11,13) )
     
     for i, ax in enumerate(axs.flatten() ):
