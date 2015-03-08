@@ -195,51 +195,61 @@ def test_dalec():
     p_vect=np.array([ 4.41e-6, 0.47, 0.3150, 0.4344,0.002665, 2.06e-6, 2.48e-3, \
                 2.28e-2, 2.65e-6 ] )
 
-    outputs = np.zeros( (11, len (doys )) )
+    outputs = np.zeros( (17, len (doys )) )
     for (i, doy ) in enumerate ( doys ) :
-        ( nee, gpp, Ra, Rh1, Rh2, Cf, Cr, Cw, Clit, Csom, lai ) = dalec ( doy, \
+         ( nee, gpp, Ra, Rh1, Rh2, Af, Ar, Aw, Lw, Lr, D, \
+            Cf, Cr, Cw, Clit, Csom, lai ) = dalec ( doy, \
             tmn[i], tmp[i], tmx[i], irad[i], ca[i], nitrogen[i], \
-            lat, lma, p_vect, \
-            Cf, Cr, Cw, Clit, Csom, psid=psid[i], rtot=rtot[i] )
-        outputs[:, i] = ( nee, gpp, Ra, Rh1, Rh2, Cf, Cr, Cw, Clit, Csom, lai )
+            lat, lma, p_vect, Cf, Cr, Cw, Clit, Csom, \
+            psid=psid[i], rtot=rtot[i] )
+         outputs[:, i] =  ( nee, gpp, Ra, Rh1, Rh2, Af, Ar, Aw, Lw, Lr, D, \
+            Cf, Cr, Cw, Clit, Csom, lai )
     tx = np.arange ( len(doys))
-    plt.figure(figsize=(8,8))
-    plt.plot ( tx, outputs[0,:], '-', label="NEE" )
-    plt.plot ( tx, outputs[1,:], '-', label="GPP" )
-    plt.plot ( tx, outputs[2,:], '-', label="Ra" )
-    plt.plot ( tx, outputs[3,:], '-', label="Rh1" )
-    plt.plot ( tx, outputs[4,:], '-', label="Rh2" )
-    plt.plot ( tx, tx*0., '-', lw=1.5, c="0.8" )
-    plt.xlabel("Days after 01/01/2000")
-    plt.ylabel ("Flux magnitude $[gCm^{-2}d^{-1}]$" )
-    plt.title ( "DALEC calculated fluxes" )
-    plt.legend ( loc="best", fancybox=True )
-    ax = plt.gca()
-    ax.spines["top"].set_visible(False)  
-    ax.spines["bottom"].set_visible(True)  
-    ax.spines["right"].set_visible(False)  
+    #####plt.figure(figsize=(8,8))
+    #####plt.plot ( tx, outputs[0,:], '-', label="NEE" )
+    #####plt.plot ( tx, outputs[1,:], '-', label="GPP" )
+    #####plt.plot ( tx, outputs[2,:], '-', label="Ra" )
+    #####plt.plot ( tx, outputs[3,:], '-', label="Rh1" )
+    #####plt.plot ( tx, outputs[4,:], '-', label="Rh2" )
+    #####plt.plot ( tx, tx*0., '-', lw=1.5, c="0.8" )
+    #####plt.xlabel("Days after 01/01/2000")
+    #####plt.ylabel ("Flux magnitude $[gCm^{-2}d^{-1}]$" )
+    #####plt.title ( "DALEC calculated fluxes" )
+    #####plt.legend ( loc="best", fancybox=True )
+    #####ax = plt.gca()
+    #####ax.spines["top"].set_visible(False)  
+    #####ax.spines["bottom"].set_visible(True)  
+    #####ax.spines["right"].set_visible(False)  
     
-    ax.spines["left"].set_visible(True)  
+    #####ax.spines["left"].set_visible(True)  
 
-    #Ensure that the axis ticks only show up on the bottom and left of the plot.  
-    #Ticks on the right and top of the plot are generally unnecessary chartjunk.  
-    ax.get_xaxis().tick_bottom()  
-    ax.get_yaxis().tick_left()  
+    ######Ensure that the axis ticks only show up on the bottom and left of the plot.  
+    ######Ticks on the right and top of the plot are generally unnecessary chartjunk.  
+    #####ax.get_xaxis().tick_bottom()  
+    #####ax.get_yaxis().tick_left()  
 
-    ax.tick_params(axis="both", which="both", bottom="off", top="off",  
-            labelbottom="on", left="off", right="off", labelleft="on")  
+    #####ax.tick_params(axis="both", which="both", bottom="off", top="off",  
+            #####labelbottom="on", left="off", right="off", labelleft="on")  
 
-    pools = [r'$C_f$',r'$C_r$',r'$C_w$',r'$C_{lit}$',r'$C_{SOM}$']
-    fig, axs = plt.subplots (nrows=2, ncols=3, figsize=(10,8) )
+    pools = [r'$GPP$, $NEE$', '$Ra$', '$Rh_1$','$Rh_2$', '$A_f$','$A_r$', \
+        '$A_w$','$L_f$', '$L_r$', '$L_w$', '$D$',\
+        r'$C_f$',r'$C_r$',r'$C_w$',r'$C_{lit}$',r'$C_{SOM}$']
+    fig, axs = plt.subplots (nrows=3, ncols=5, sharex="col", figsize=(11,13) )
     
     for i, ax in enumerate(axs.flatten() ):
         pretty_axes ( ax )
-        if i < 5:
-            ax.plot ( tx, outputs[5+i,:], '-' )
+        if i == 0:
+            ax.plot ( tx, outputs[ 0, :], '-', label="GPP" )
+            ax.plot ( tx, outputs[ 1, :], '-', label="NEE" )
+            ax.plot ( tx, np.zeros_like ( tx ), '-', color="0.9" )
             ax.set_title (pools[i], fontsize=12 )
-            
-            
+            ax.legend(loc='best', fancybox=True, fontsize=8 )
         else:
-            ax.set_visible ( False )
+            ax.plot ( tx, outputs[ i+2, :], '-' )
+            ax.set_title (pools[i], fontsize=12 )
+
         ax.set_xlim ( 0, 1100 )
-    plt.subplots_adjust ( wspace=0.3 )
+        ax.xaxis.set_ticks([1,365, 365*2, 365*3])
+    plt.subplots_adjust ( wspace=0.4 )
+    
+    
