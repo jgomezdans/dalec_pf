@@ -227,5 +227,5 @@ def test_dalec():
         ax.set_xlim ( 0, 1100 )
         ax.xaxis.set_ticks([1,365, 365*2, 365*3])
     plt.subplots_adjust ( wspace=0.4 )
-    
+    return  outputs
     
