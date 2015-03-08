@@ -63,62 +63,20 @@ class Model ( object ):
         # Extract the state components from the input
         Cf, Cr, Cw, Clit, Csom = x
         # Run DALEC
-        ( nee, gpp, Ra, Rh1, Rh2, Cf, Cr, Cw, Clit, Csom, lai ) = dalec ( doy, \
+        ( nee, gpp, Ra, Rh1, Rh2, Af, Ar, Aw, Lw, Lr, D, \
+            Cf, Cr, Cw, Clit, Csom, lai ) = dalec ( doy, \
             tmn, tmp, tmx, irad, ca, nitro, \
             self.model_params[0], self.model_params[1], \
             self.model_params[2:], \
             Cf, Cr, Cw, Clit, Csom, psid=psid, rtot=rtot )
         # Do we store the output?
         if store:
-            self.previous_state.append ( [ nee, gpp, Cf, Cr, Cw, \
-                Clit, Csom ] )
+            self.previous_state.append ( [  nee, gpp, Ra, Rh1, Rh2, Af, Ar, Aw, Lw, Lr, D, \
+            Cf, Cr, Cw, Clit, Csom, lai  ] )
 
-        return nee, gpp, Cf, Cr, Cw, Clit, Csom
+        return ( nee, gpp, Ra, Rh1, Rh2, Af, Ar, Aw, Lw, Lr, D, \
+            Cf, Cr, Cw, Clit, Csom )
 
-    def run_model_flux ( self, x, i, store=False ):
-        """Runs the model forward to ``i+1`` using input state ``x``, 
-        assuming parameter vectors stored in the class. The output
-        is returned to the user, but also stored in ``self.previous_state``,
-        if you told the method to store the data. This is an option as
-        one might be using this code within an ensemble.
-        
-        NOTE
-        ----
-        Not all fluxes are returned! For example, respiration and litter
-        fluxes are ignored. Feel free to add them in.
-        
-        Parameters
-        -----------
-        x: iter
-            The state, defined as Cf, Cr, Cw, Clit, Csom
-            
-        i: int
-            The time step
-            
-        Returns
-        --------
-        nee, gpp, Cf, Cr, Cw, Clit, Csom 
-            A tuple containing the updated state, as well as the fluxes
-        """
-        # Extract drivers...
-
-        doy, temp, tmx, tmn, irad, psid, ca, rtot, nitro = self.drivers[i,:]
-        tmp = 0.5* (tmx-tmn)
-
-        # Extract the state components from the input
-        Cf, Cr, Cw, Clit, Csom = x
-        # Run DALEC
-        ( nee, gpp, Ra, Rh1, Rh2, Cf, Cr, Cw, Clit, Csom, lai ) = dalec ( doy, \
-            tmn, tmp, tmx, irad, ca, nitro, \
-            self.model_params[0], self.model_params[1], \
-            self.model_params[2:], \
-            Cf, Cr, Cw, Clit, Csom, psid=psid, rtot=rtot )
-        # Do we store the output?
-        if store:
-            self.previous_state.append ( [ nee, gpp, Cf, Cr, Cw, \
-                Clit, Csom ] )
-
-        return ( nee, gpp, Ra, Rh1, Rh2, Cf, Cr, Cw, Clit, Csom, lai )
 
 
 def read_LAI_obs ( fname="Metolius_MOD15_LAI.txt"):
@@ -138,7 +96,7 @@ def read_LAI_obs ( fname="Metolius_MOD15_LAI.txt"):
             
     return np.array ( lai_time ), np.array ( lai_obs ), np.array ( lai_unc )            
 
-def assimilate_obs (timestep, ensemble, model, model_unc,  obs, obs_unc ):
+def assimilate_obs ( timestep, ensemble, model, model_unc,  obs, obs_unc ):
     
     
     # Get the number of particles
@@ -160,11 +118,11 @@ def assimilate_obs (timestep, ensemble, model, model_unc,  obs, obs_unc ):
     for particle in xrange ( 1, n_particles ):
         # Select one random particle, and advance it using the model.
         # We store the proposed state in ``proposed`` (creative, yeah?)
-        proposed = model ( ensemble[part_sel[particle],:], timestep )[2:] + \
+        proposed = model ( ensemble[part_sel[particle],:], timestep )[-5:] + \
                     np.random.randn( state_size )*model_unc
         while np.all ( proposed < 0 ):
             # Clips -ve values, that make no sense here
-            proposed = model ( ensemble[part_sel[particle],:], timestep )[2:] + \
+            proposed = model ( ensemble[part_sel[particle],:], timestep )[-5:] + \
                     np.random.randn( state_size )*model_unc
         # Calculate the predicted observations, using our (embarrassing) 
         # observation operator, in this case, divide by SLA
@@ -214,9 +172,16 @@ def sequential_mh ( x0, \
         else:
             # No observation, just advance the model for all the particles
             for particle in xrange ( n_particles ):
-                state[ timestep, particle, : ] = model ( \
-                    ensemble[particle, :], timestep )[2:] + \
+                
+                new_state = model ( \
+                    ensemble[particle, :], timestep )[-5:] + \
                     np.random.randn( state_size )*model_unc
+                while np.all ( new_state < 0 ):
+                   new_state = model ( \
+                        ensemble[particle, :], timestep )[-5:] + \
+                       np.random.randn( state_size )*model_unc
+                    
+                state[ timestep, particle, : ] = new_state
         # Update the ensemble
         ensemble = state[ timestep, :, : ]*1.
         
@@ -227,14 +192,14 @@ def plot_pools_fluxes ( model, states, \
     pools = [r'$C_f$',r'$C_r$',r'$C_w$',r'$C_{lit}$',r'$C_{SOM}$'] ):
     
     
-    fwd_model = np.zeros(( states.shape[0], states.shape[1], 11))
-    # ( nee, gpp, Ra, Rh1, Rh2, Cf, Cr, Cw, Clit, Csom, lai )
+    fwd_model = np.zeros(( states.shape[0], states.shape[1], 16 ))
+
     clist = ["#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", \
              "#FFD92F", "#E5C494", "#B3B3B3" ]
 
     for i in xrange ( states.shape[0] ):
         for p in xrange ( states.shape[1] ):
-            fwd_model[i, p, :] = model.run_model_flux ( states[i,p,:], i )
+            fwd_model[i, p, :] = model.run_model ( states[i,p,:], i )
 
     fig1, axs = plt.subplots (nrows=5, ncols=1, sharex="col", figsize=(13,7) )
     tx = np.arange ( states.shape[0] )
@@ -266,6 +231,31 @@ def plot_pools_fluxes ( model, states, \
         
     for i, ax in enumerate(axs.flatten() ):
         pretty_axes ( ax )
+        ax.plot ( tx, fwd_model[:, :,11+i].mean(axis=1), '-', color=clist[i] )
+        
+        lb = [ np.percentile(fwd_model[j,:,i+11], 5) for j in xrange(1095)]
+        ub = [ np.percentile(fwd_model[j,:,i+11], 95) for j in xrange(1095)]
+        ax.fill_between ( np.arange(1095), lb, ub,color=clist[i],  alpha=0.2  )
+        ax.plot([], [],  color=clist[i], alpha=0.2, linewidth=10, label="5-95% CI")
+        lb = [ np.percentile(fwd_model[j,:,i+11], 25) for j in xrange(1095)]
+        ub = [ np.percentile(fwd_model[j,:,i+11], 75) for j in xrange(1095)]
+        ax.fill_between ( np.arange(1095), lb, ub,color=clist[i],  alpha=0.7  )
+        ax.plot([], [],  color=clist[i], alpha=0.7, linewidth=10, label="25-75% CI")
+        ax.set_ylabel(r'$[gCm^{-2}]$')
+
+        ax.set_title (pools[i], fontsize=12 )            
+        ax.set_xlim ( 0, 1100 )
+        ax.xaxis.set_ticklabels ([])
+        pretty_axes ( ax )
+    ax.xaxis.set_ticks([1,365, 365*2, 365*3])
+    ax.xaxis.set_ticklabels([1,365, 365*2, 365*3])
+    plt.subplots_adjust ( wspace=0.3 )
+    ax.set_xlabel("Days after 01/01/2000")
+    
+    fig3, axs = plt.subplots (nrows=2, ncols=3, figsize=(13,7) )
+    fluxes2=[r'$A_f$',r'$A_r$', r'$A_w$',r'$L_f$',r'$L_r$',r'$L_w$','$D$' ]
+    for i, ax in enumerate(axs.flatten() ):
+        pretty_axes ( ax )
         ax.plot ( tx, fwd_model[:, :,5+i].mean(axis=1), '-', color=clist[i] )
         
         lb = [ np.percentile(fwd_model[j,:,i+5], 5) for j in xrange(1095)]
@@ -276,10 +266,9 @@ def plot_pools_fluxes ( model, states, \
         ub = [ np.percentile(fwd_model[j,:,i+5], 75) for j in xrange(1095)]
         ax.fill_between ( np.arange(1095), lb, ub,color=clist[i],  alpha=0.7  )
         ax.plot([], [],  color=clist[i], alpha=0.7, linewidth=10, label="25-75% CI")
-        ax.set_ylabel(r'$[gCm^{-2}]$')
+        ax.set_ylabel(r'$[gCm^{-2}d^{-1}]$')
 
-
-        ax.set_title (pools[i], fontsize=12 )            
+        ax.set_title (fluxes2[i], fontsize=12 )            
         ax.set_xlim ( 0, 1100 )
         ax.xaxis.set_ticklabels ([])
         pretty_axes ( ax )
@@ -287,10 +276,14 @@ def plot_pools_fluxes ( model, states, \
     ax.xaxis.set_ticklabels([1,365, 365*2, 365*3])
     plt.subplots_adjust ( wspace=0.3 )
     ax.set_xlabel("Days after 01/01/2000")
-    return fig1, fig2, fwd_model
+    
+    
+    
+    
+    return fig1, fig2, fig3, fwd_model
 
-def assimilate( sla=110, n_particles=500, Cf0=58., Cr0=102., Cw0=770.,\
-                Clit0=40., Csom0=9897., model_unc=np.array([5, 10, 77, 4, 90]) ):
+def assimilate( sla=110, n_particles=750, Cf0=58., Cr0=102., Cw0=770.,\
+                Clit0=40., Csom0=9897., model_unc=np.array([5, 10, 77, 20, 100]) ):
     lat = 44.4 # Latitude
     sla = 110.
     n_particles = 500
@@ -307,7 +300,7 @@ def assimilate( sla=110, n_particles=500, Cf0=58., Cr0=102., Cw0=770.,\
     
     
     lai_time, lai_obs, lai_unc = read_LAI_obs ()
-    
+    lai_unc = lai_unc*1.2 
     s0 = x0[:, None] + \
        np.random.randn(5, n_particles)*model_unc[:, None]
     s0 = s0.T
@@ -342,5 +335,5 @@ def assimilate( sla=110, n_particles=500, Cf0=58., Cr0=102., Cw0=770.,\
     plt.legend(loc="upper left", fancybox=True, numpoints=1 )
     ax = plt.gca()
     pretty_axes ( ax )
-    fig2, fig3, fwd_model = plot_pools_fluxes ( DALEC, results )
-    return fig, fig2, fig3, fwd_model
+    fig2, fig3, fig4, fwd_model = plot_pools_fluxes ( DALEC, results )
+    return fwd_model
