@@ -61,10 +61,12 @@ def plot_config ():
             "legend.fontsize": 12,
             "xtick.labelsize": 12,
             "ytick.labelsize": 12
+            
     }
     '''
     s = json.loads ( config_json )
     plt.rcParams.update(s)
+    plt.rcParams["axes.formatter.limits"] = [-4,4]
     
 
 def pretty_axes( ax ):
