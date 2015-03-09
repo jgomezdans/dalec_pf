@@ -206,23 +206,53 @@ def test_dalec():
             Cf, Cr, Cw, Clit, Csom, lai )
     tx = np.arange ( len(doys))
 
-    pools = [r'$GPP$, $NEE$', '$Ra$', '$Rh_1$','$Rh_2$', '$A_f$','$A_r$', \
+    pools = [r'$NEE$', r'$GPP$',  '$Ra$', '$Rh_1 + Rh_2$', '$A_f$','$A_r$', \
         '$A_w$','$L_f$', '$L_r$', '$L_w$', '$D$',\
         r'$C_f$',r'$C_r$',r'$C_w$',r'$C_{lit}$',r'$C_{SOM}$']
 
-    fig, axs = plt.subplots (nrows=3, ncols=5, sharex="col", figsize=(11,13) )
+    fig, axs = plt.subplots (nrows=4, ncols=4, sharex="col", figsize=(11,13) )
     
     for i, ax in enumerate(axs.flatten() ):
         pretty_axes ( ax )
-        if i == 0:
-            ax.plot ( tx, outputs[ 0, :], '-', label="GPP" )
-            ax.plot ( tx, outputs[ 1, :], '-', label="NEE" )
-            ax.plot ( tx, np.zeros_like ( tx ), '-', color="0.9" )
-            ax.set_title (pools[i], fontsize=12 )
-            ax.legend(loc='best', fancybox=True, fontsize=8 )
-        else:
-            ax.plot ( tx, outputs[ i+2, :], '-' )
-            ax.set_title (pools[i], fontsize=12 )
+        ax.plot ( tx, outputs[ i, :], '-' )
+        ax.set_title (pools[i], fontsize=12 )
+        
+        try:
+            if pools[i] == r'$C_f$':
+                d = np.loadtxt ( "meas_flux_cf.txt.gz" )
+                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
+                
+            elif pools[i] == r'$C_{lit}$':
+                d = np.loadtxt ( "meas_flux_cl.txt.gz" )
+                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
+                
+            elif pools[i] == r'$C_w$':
+                d = np.loadtxt ( "meas_flux_cw.txt.gz" )
+                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
+                
+            elif pools[i] == r'$C_r$':
+                d = np.loadtxt ( "meas_flux_cr.txt.gz" )
+                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
+                
+            elif pools[i] == r'$L_f$':
+                d = np.loadtxt ( "meas_flux_lf.txt.gz" )
+                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
+                
+            elif pools[i] == r'$GPP$':
+                d = np.loadtxt ( "meas_flux_gpp.txt.gz" )
+                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none")
+                
+            elif pools[i] == r'$NEE$':
+                d = np.loadtxt ( "meas_flux_nee.txt.gz" )
+                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none")
+                
+            elif pools[i] == r'$Ra$':
+                d = np.loadtxt ( "meas_flux_ra.txt.gz" )
+                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
+                
+
+        except:
+            pass
 
         ax.set_xlim ( 0, 1100 )
         ax.xaxis.set_ticks([1,365, 365*2, 365*3])
