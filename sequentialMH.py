@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import numpy as np
 import matplotlib.pyplot as plt
-import brewer2mpl
+import time
 
 from dalec import dalec
 from plot_utils import pretty_axes
@@ -219,6 +219,21 @@ def plot_pools_fluxes ( model, states, \
         ax.set_title (fluxes[i], fontsize=12 )            
         ax.set_xlim ( 0, 1100 )
         ax.xaxis.set_ticklabels ([])
+        try:
+            if pools[i] == 'GPP':
+                d = np.loadtxt ( "meas_flux_gpp.txt.gz" )
+                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
+                ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
+            elif pools[i] == 'NEE':
+                d = np.loadtxt ( "meas_flux_nee.txt.gz" )
+                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
+                ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
+            elif pools[i] == 'Ra':
+                d = np.loadtxt ( "meas_flux_ra.txt.gz" )
+                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
+                ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
+        except:
+            pass
         ax.set_ylabel(r'$[gCm^{-2}d^{-1}]$')
         pretty_axes ( ax )
     ax.xaxis.set_ticks([1,365, 365*2, 365*3])
@@ -246,6 +261,26 @@ def plot_pools_fluxes ( model, states, \
         ax.set_title (pools[i], fontsize=12 )            
         ax.set_xlim ( 0, 1100 )
         ax.xaxis.set_ticklabels ([])
+        try:
+            if pools[i] == r'$C_f$':
+                d = np.loadtxt ( "meas_flux_cf.txt.gz" )
+                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
+                ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
+            elif pools[i] == r'$C_{lit}$':
+                d = np.loadtxt ( "meas_flux_cl.txt.gz" )
+                ax.plot ( d[:, 0], d[:,1], 'ko' )
+                ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
+            elif pools[i] == r'$C_w$':
+                d = np.loadtxt ( "meas_flux_cw.txt.gz" )
+                ax.plot ( d[:, 0], d[:,1], 'ko' )
+                ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
+            elif pools[i] == r'$C_r$':
+                d = np.loadtxt ( "meas_flux_cr.txt.gz" )
+                ax.plot ( d[:, 0], d[:,1], 'ko' )
+                ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
+        except:
+            pass
+
         pretty_axes ( ax )
     ax.xaxis.set_ticks([1,365, 365*2, 365*3])
     ax.xaxis.set_ticklabels([1,365, 365*2, 365*3])
@@ -267,15 +302,29 @@ def plot_pools_fluxes ( model, states, \
         ax.fill_between ( np.arange(1095), lb, ub,color=clist[i],  alpha=0.7  )
         ax.plot([], [],  color=clist[i], alpha=0.7, linewidth=10, label="25-75% CI")
         ax.set_ylabel(r'$[gCm^{-2}d^{-1}]$')
+        try:
+            if pools[i] == r'$L_f$':
+                d = np.loadtxt ( "meas_flux_lf.txt.gz" )
+                ax.plot ( d[:, 0], d[:,1], 'ko' )
+                ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
+            elif pools[i] == r'$L_w$':
+                d = np.loadtxt ( "meas_flux_lw.txt.gz" )
+                ax.plot ( d[:, 0], d[:,1], 'ko' )
+                ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
+        except:
+            pass
+
 
         ax.set_title (fluxes2[i], fontsize=12 )            
         ax.set_xlim ( 0, 1100 )
         ax.xaxis.set_ticklabels ([])
         pretty_axes ( ax )
-    ax.xaxis.set_ticks([1,365, 365*2, 365*3])
-    ax.xaxis.set_ticklabels([1,365, 365*2, 365*3])
-    plt.subplots_adjust ( wspace=0.3 )
-    ax.set_xlabel("Days after 01/01/2000")
+        ax.xaxis.set_ticks([1,365, 365*2, 365*3])
+        
+        plt.subplots_adjust ( wspace=0.3 )
+        if i > 2:
+            ax.xaxis.set_ticklabels([1,365, 365*2, 365*3])
+            ax.set_xlabel("Days after 01/01/2000")
     
     
     
@@ -283,7 +332,9 @@ def plot_pools_fluxes ( model, states, \
     return fig1, fig2, fig3, fwd_model
 
 def assimilate( sla=110, n_particles=750, Cf0=58., Cr0=102., Cw0=770.,\
-                Clit0=40., Csom0=9897., model_unc=np.array([5, 10, 77, 20, 100]) ):
+                Clit0=40., Csom0=9897., Cfunc=5, Crunc=10, Cwunc=77, Clitunc=20,Csomunc=100  ):
+    t0 = time.time()
+    model_unc=np.array([Cfunc, Crunc, Cwunc, Clitunc, Csomunc])
     lat = 44.4 # Latitude
     sla = 110.
     n_particles = 500
@@ -336,4 +387,6 @@ def assimilate( sla=110, n_particles=750, Cf0=58., Cr0=102., Cw0=770.,\
     ax = plt.gca()
     pretty_axes ( ax )
     fig2, fig3, fig4, fwd_model = plot_pools_fluxes ( DALEC, results )
+    elapsed_time = time.time() - t0
+    print "Assimilation finished! Took %d seconds" % elapsed_time
     return fwd_model
