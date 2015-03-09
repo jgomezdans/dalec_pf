@@ -3,7 +3,7 @@
 ## J Gómez-Dans (NCEO & UCL)
 
 This repository contains Python code to carry out some computational experiments with an
-ecosystem model (the [DALEC](http://www.geos.ed.ac.uk/homes/mwilliam/DALEC.html) of Mat Williams in Edinburgh) using a particle filter. The particular flavour of particle filter that's being used is the sequential Metropolis-Hastings filter, described in [Dowd (2007)](www2.geog.ucl.ac.uk/~mdisney/teaching/teachingNEW/methods/diff/Dowd.Bayesian_DA.JMSys.2007.pdf). You can fidn the Python code files, but also an IPython notebook with a lab on exploring this DA frameweork.
+ecosystem model (the [DALEC](http://www.geos.ed.ac.uk/homes/mwilliam/DALEC.html) of Mat Williams in Edinburgh) using a particle filter. The particular flavour of particle filter that's being used is the sequential Metropolis-Hastings filter, described in [Dowd (2007)](http://www2.geog.ucl.ac.uk/~mdisney/teaching/teachingNEW/methods/diff/Dowd.Bayesian_DA.JMSys.2007.pdf). You can fidn the Python code files, but also an IPython notebook with a lab on exploring this DA frameweork.
 
 
 
