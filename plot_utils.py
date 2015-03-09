@@ -35,8 +35,8 @@ def plot_config ():
             "patch.linewidth": 0.5,
             "legend.fancybox": true,
             "axes.color_cycle": [
-                "#66C2A5",
                 "#FC8D62",
+                "#66C2A5",
                 "#8DA0CB",
                 "#E78AC3",
                 "#A6D854",
