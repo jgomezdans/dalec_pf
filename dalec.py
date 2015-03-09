@@ -4,11 +4,16 @@ Mat Williams ACM & DALEC models
 That's all folks.
 """
 
+__author__ = "J Gomez-Dans"
+__version__ = "1.0 (09.03.2015)"
+__email__ = "j.gomez-dans@ucl.ac.uk"
 
 import numpy as np
 import matplotlib.pyplot as plt
 
 from plot_utils import pretty_axes
+
+
 
 def acm ( lat, lai, doy, tmx, tmn, irad,  ca, nitrogen, \
             a = np.array( [ 2.155, 0.0142, 217.9, 0.980, 0.155, 2.653, \

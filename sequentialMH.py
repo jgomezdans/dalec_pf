@@ -5,6 +5,12 @@ import time
 
 from dalec import dalec
 from plot_utils import pretty_axes
+
+
+__author__ = "J Gomez-Dans"
+__version__ = "1.0 (09.03.2015)"
+__email__ = "j.gomez-dans@ucl.ac.uk"
+
     
 def safe_log(x, minval=0.0000000001):
     """This functions just does away with numerical 

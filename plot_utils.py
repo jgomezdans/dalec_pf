@@ -3,6 +3,12 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 
+
+__author__ = "J Gomez-Dans"
+__version__ = "1.0 (09.03.2015)"
+__email__ = "j.gomez-dans@ucl.ac.uk"
+
+
 def get_observations ( fname="dalec_drivers.OREGON.MW_obs.dat" ):
     """This is an utility function that extracts the observations 
     from the original ASCII file.
