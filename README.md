@@ -7,3 +7,21 @@ ecosystem model (the [DALEC](http://www.geos.ed.ac.uk/homes/mwilliam/DALEC.html)
 
 
 
+### Using on UCL's UNIX system
+
+Note that in order to use the notebook, we need to do the following:
+    
+    source activate ipy3
+    
+This lets you use the IPython notebook version 3.0.0. To have access to the notebooks etc, you can change the directory to your data storage (typically ``~/DATA``), and
+
+    git clone https://github.com/jgomezdans/dalec_pf.git
+    
+If you're running this on a computer without ``git``, you can just download [the zipfile](https://github.com/jgomezdans/dalec_pf/archive/master.zip). Note that the only dependencies here are
+
+* IPython notebook (>= v 3.0.0)
+* Matplotlib
+* Numpy
+* Scipy
+
+These are all available from e.g. [Anaconda](http://continuum.io/downloads) standard distributions.
