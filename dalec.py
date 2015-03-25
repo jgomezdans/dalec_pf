@@ -176,7 +176,7 @@ def dalec ( doy, tmn, tmp, tmx, irad, ca, nitrogen, \
     return ( nee, gpp, Ra, Rh1, Rh2, Af, Ar, Aw, Lw, Lr, D, \
             Cf, Cr, Cw, Clit, Csom, lai )
     
-def test_dalec():
+def test_dalec( do_plots=True ):
     # Meteolius First Young Pine
     driver_data = np.loadtxt ( "dalec_drivers.OREGON.no_obs.dat" )
     doys = driver_data[ :, 0 ] 
@@ -214,7 +214,9 @@ def test_dalec():
     pools = [r'$NEE$', r'$GPP$',  '$Ra$', '$Rh_1 + Rh_2$', '$A_f$','$A_r$', \
         '$A_w$','$L_f$', '$L_r$', '$L_w$', '$D$',\
         r'$C_f$',r'$C_r$',r'$C_w$',r'$C_{lit}$',r'$C_{SOM}$']
-
+    if do_plots is not True:
+        return outputs
+    
     fig, axs = plt.subplots (nrows=4, ncols=4, sharex="col", figsize=(11,13) )
     
     for i, ax in enumerate(axs.flatten() ):
