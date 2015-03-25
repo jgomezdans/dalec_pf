@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 
-from dalec import dalec
+from dalec import dalec, test_dalec
 from plot_utils import pretty_axes
 
 
@@ -230,7 +230,8 @@ def sequential_mh ( x0, \
 def plot_pools_fluxes ( model, states, \
     pools = [r'$C_f$',r'$C_r$',r'$C_w$',r'$C_{lit}$',r'$C_{SOM}$'] ):
     
-    
+    # Run the vanilla model and store the fluxes...
+    vanilla_dalec = test_dalec ( do_plots=False )
     fwd_model = np.zeros(( states.shape[0], states.shape[1], 16 ))
 
     clist = ["#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", \
@@ -371,12 +372,23 @@ def plot_pools_fluxes ( model, states, \
     return fig1, fig2, fig3, fwd_model
 
 def assimilate( sla=110, n_particles=750, Cf0=58., Cr0=102., Cw0=770.,\
-                Clit0=40., Csom0=9897., Cfunc=5, Crunc=10, Cwunc=77, Clitunc=20,Csomunc=100  ):
+                Clit0=40., Csom0=9897., \
+                Cfunc=5, Crunc=10, Cwunc=77, Clitunc=20, Csomunc=100, \
+                do_lai=True, do_cw=False, do_cr=False, do_cf=False, do_cl=False,
+                lai_thin=0, lai_unc_scalar=1.):
     t0 = time.time()
+    # The following sets the fluxes we would like to assimilate
+    obs_to_assim = np.zeros(5).astype ( np. bool )
+    obs_to_assim[0] = do_lai
+    obs_to_assim[1] = do_cw
+    obs_to_assim[2] = do_cr
+    obs_to_assim[3] = do_cf
+    obs_to_assim[4] = do_cl
+    
     model_unc=np.array([Cfunc, Crunc, Cwunc, Clitunc, Csomunc])
     lat = 44.4 # Latitude
-    sla = 110.
-    n_particles = 500
+#    sla = 110.
+#    n_particles = 500
     #params = np.array([ lat, sla, 4.4e-6, 0.47, 0.31, 0.43,0.0027, \
         #0.00000206, 0.00248, 0.0228, 0.00000265 ] )
     params = np.array([ lat, sla, 4.4e-6, 0.47, 0.31, 0.43,0.0010, \
@@ -387,18 +399,16 @@ def assimilate( sla=110, n_particles=750, Cf0=58., Cr0=102., Cw0=770.,\
     
     DALEC = Model ( params )
     
+    observations = Observations ()
     
-    
-    lai_time, lai_obs, lai_unc = read_LAI_obs ()
-    lai_unc = lai_unc*1.2 
     s0 = x0[:, None] + \
        np.random.randn(5, n_particles)*model_unc[:, None]
     s0 = s0.T
     
     results = sequential_mh ( s0, \
                     DALEC.run_model, model_unc, \
-                    lai_obs, lai_unc, \
-                    np.arange(1095), lai_time )
+                    observations, \
+                    np.arange(1095) )
     
     
     fig = plt.figure(figsize=(13,7))
