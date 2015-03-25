@@ -17,6 +17,56 @@ def safe_log(x, minval=0.0000000001):
     warnings."""
     return np.log(x.clip(min=minval))
 
+class Observations ( object ):
+    """A storage for the observational data"""
+    def __init__ ( self, fname="dalec_drivers.OREGON.MW_obs.dat" ):
+        """This is an utility function that extracts the observations 
+        from the original ASCII file.
+        """
+        fluxes = {}
+        for flux in ["lai", "gpp","nee", "ra", "af", "aw", "ar", "lf", "lw","lr","cf","cw","cr",\
+            "rh1","rh2","decomp", "cl", "rs","rt", "npp","nep","agb","tbm"]:
+            fp = open( fname, 'r')
+            this_flux = []
+            for i, line in enumerate( fp ):
+                sline = line.split()
+                if sline.count( flux ) > 0:
+                    j = sline.index( flux )
+                    this_flux.append ( [ float(i), float(sline[j+1]), float(sline[j+2] ) ] )
+            fluxes[flux] = np.array( this_flux )
+            fp.close()
+        
+        for flux in fluxes.iterkeys():
+            if len( fluxes[flux] ) > 0:
+                print "Saving obs stream: %s (%d obs)" % ( flux, len( fluxes[flux] ) )
+                np.savetxt ( "meas_flux_%s.txt.gz" % flux, fluxes[flux] )
+        self.fluxes = {}
+        for flux in ["lai", "gpp","nee", "ra", "af", "aw", "ar", "lf", "lw","lr","cf","cw","cr",\
+            "rh1","rh2","decomp", "cl", "rs","rt", "npp","nep","agb","tbm"]:
+            if flux == "lai":
+                self._read_LAI_obs()
+            elif len( fluxes[flux] ) > 0:
+                self.fluxes[flux] = np.loadtxt ( "meas_flux_%s.txt.gz" % flux )
+        
+    def _read_LAI_obs ( self, fname="Metolius_MOD15_LAI.txt"):
+        """This function reads the LAI data, and rejiggles it so that it is
+        in the same time axis as the drivers"""
+        d = np.loadtxt( fname )
+        lai_obs = []
+        lai_unc = []
+        lai_time = []
+        time_track = 1
+        for i in xrange( d.shape[0] ):
+            year = d[i,0]
+            if year < 2003:
+                lai_obs.append ( d[i,2] )
+                lai_unc.append ( d[i,3] )
+                lai_time.append ( d[i,1] + (d[i,0]-2000)*365 )
+        self.fluxes['lai'] = np.c_[np.array ( lai_time ), np.array ( lai_obs ), \
+            np.array ( lai_unc )]
+        print self.fluxes['lai']            
+    
+        
 class Model ( object ):
     """A class for updating the DALEC model"""
     def __init__ ( self, model_params, drivers="dalec_drivers.OREGON.no_obs.dat" ):
@@ -84,23 +134,6 @@ class Model ( object ):
             Cf, Cr, Cw, Clit, Csom )
 
 
-
-def read_LAI_obs ( fname="Metolius_MOD15_LAI.txt"):
-    """This function reads the LAI data, and rejiggles it so that it is
-    in the same time axis as the drivers"""
-    d = np.loadtxt( fname )
-    lai_obs = []
-    lai_unc = []
-    lai_time = []
-    time_track = 1
-    for i in xrange( d.shape[0] ):
-        year = d[i,0]
-        if year < 2003:
-            lai_obs.append ( d[i,2] )
-            lai_unc.append ( d[i,3] )
-            lai_time.append ( d[i,1] + (d[i,0]-2000)*365 )
-            
-    return np.array ( lai_time ), np.array ( lai_obs ), np.array ( lai_unc )            
 
 def assimilate_obs ( timestep, ensemble, model, model_unc,  obs, obs_unc ):
     
