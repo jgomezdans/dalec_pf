@@ -9,9 +9,6 @@ __version__ = "1.0 (09.03.2015)"
 __email__ = "j.gomez-dans@ucl.ac.uk"
 
 import numpy as np
-import matplotlib.pyplot as plt
-
-from plot_utils import pretty_axes
 
 
 
@@ -176,7 +173,7 @@ def dalec ( doy, tmn, tmp, tmx, irad, ca, nitrogen, \
     return ( nee, gpp, Ra, Rh1, Rh2, Af, Ar, Aw, Lw, Lr, D, \
             Cf, Cr, Cw, Clit, Csom, lai )
     
-def test_dalec( do_plots=True ):
+def test_dalec( ):
     # Meteolius First Young Pine
     driver_data = np.loadtxt ( "dalec_drivers.OREGON.no_obs.dat" )
     doys = driver_data[ :, 0 ] 
@@ -209,60 +206,5 @@ def test_dalec( do_plots=True ):
             psid=psid[i], rtot=rtot[i] )
          outputs[:, i] =  ( nee, gpp, Ra, Rh1, Rh2, Af, Ar, Aw, Lw, Lr, D, \
             Cf, Cr, Cw, Clit, Csom, lai )
-    tx = np.arange ( len(doys))
-
-    pools = [r'$NEE$', r'$GPP$',  '$Ra$', '$Rh_1 + Rh_2$', '$A_f$','$A_r$', \
-        '$A_w$','$L_f$', '$L_r$', '$L_w$', '$D$',\
-        r'$C_f$',r'$C_r$',r'$C_w$',r'$C_{lit}$',r'$C_{SOM}$']
-    if do_plots is not True:
-        return outputs
-    
-    fig, axs = plt.subplots (nrows=4, ncols=4, sharex="col", figsize=(11,13) )
-    
-    for i, ax in enumerate(axs.flatten() ):
-        pretty_axes ( ax )
-        ax.plot ( tx, outputs[ i, :], '-' )
-        ax.set_title (pools[i], fontsize=12 )
         
-        try:
-            if pools[i] == r'$C_f$':
-                d = np.loadtxt ( "meas_flux_cf.txt.gz" )
-                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
-                
-            elif pools[i] == r'$C_{lit}$':
-                d = np.loadtxt ( "meas_flux_cl.txt.gz" )
-                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
-                
-            elif pools[i] == r'$C_w$':
-                d = np.loadtxt ( "meas_flux_cw.txt.gz" )
-                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
-                
-            elif pools[i] == r'$C_r$':
-                d = np.loadtxt ( "meas_flux_cr.txt.gz" )
-                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
-                
-            elif pools[i] == r'$L_f$':
-                d = np.loadtxt ( "meas_flux_lf.txt.gz" )
-                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
-                
-            elif pools[i] == r'$GPP$':
-                d = np.loadtxt ( "meas_flux_gpp.txt.gz" )
-                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none")
-                
-            elif pools[i] == r'$NEE$':
-                d = np.loadtxt ( "meas_flux_nee.txt.gz" )
-                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none")
-                
-            elif pools[i] == r'$Ra$':
-                d = np.loadtxt ( "meas_flux_ra.txt.gz" )
-                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
-                
-
-        except:
-            pass
-
-        ax.set_xlim ( 0, 1100 )
-        ax.xaxis.set_ticks([1,365, 365*2, 365*3])
-    plt.subplots_adjust ( wspace=0.4 )
-    return  outputs
-    
+    return outputs    
