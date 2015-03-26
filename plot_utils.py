@@ -159,28 +159,26 @@ def plot_pools_fluxes ( model, states, \
         ub = [ np.percentile(fwd_model[j,:,i], 75) for j in xrange(1095)]
         ax.fill_between ( np.arange(1095), lb, ub,color=clist[i],  alpha=0.7  )
         ax.plot([], [],  color=clist[i], alpha=0.7, linewidth=10, label="25-75% CI")
+        ax.plot ( np.arange(1095), vanilla_dalec[ i, :-1], '--k', label="No DA" )
         ax.set_title (fluxes[i], fontsize=12 ) 
         
         ax.set_xlim ( 0, 1100 )
         ax.xaxis.set_ticklabels ([])
-        try:
-            if pools[i] == 'GPP':
-                d = np.loadtxt ( "meas_flux_gpp.txt.gz" )
-                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
-                ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
-                ax.plot ( np.arange(1095), vanilla_dalec[ 1, :-1], '--k' )
-            elif pools[i] == 'NEE':
-                d = np.loadtxt ( "meas_flux_nee.txt.gz" )
-                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
-                ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
-                ax.plot ( np.arange(1095), vanilla_dalec[ 0, :-1], '--k' )
-            elif pools[i] == 'Ra':
-                d = np.loadtxt ( "meas_flux_ra.txt.gz" )
-                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
-                ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
-                ax.plot ( np.arange(1095), vanilla_dalec[ 2, :-1], '--k' )
-        except:
-            pass
+        if fluxes[i] == 'GPP':
+            d = np.loadtxt ( "meas_flux_gpp.txt.gz" )
+            ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
+            ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
+            ax.plot ( np.arange(1095), vanilla_dalec[ i, :-1], '--k' )
+        elif fluxes[i] == 'NEE':
+            d = np.loadtxt ( "meas_flux_nee.txt.gz" )
+            ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
+            ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
+            ax.plot ( np.arange(1095), vanilla_dalec[ i, :-1], '--k' )
+        elif fluxes[i] == 'Ra':
+            d = np.loadtxt ( "meas_flux_ra.txt.gz" )
+            ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
+            ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
+            ax.plot ( np.arange(1095), vanilla_dalec[ i, :-1], '--k' )
         ax.set_ylabel(r'$[gCm^{-2}d^{-1}]$')
         pretty_axes ( ax )
     ax.xaxis.set_ticks([1,365, 365*2, 365*3])
@@ -204,30 +202,32 @@ def plot_pools_fluxes ( model, states, \
         ax.fill_between ( np.arange(1095), lb, ub,color=clist[i],  alpha=0.7  )
         ax.plot([], [],  color=clist[i], alpha=0.7, linewidth=10, label="25-75% CI")
         ax.set_ylabel(r'$[gCm^{-2}]$')
-
+        ax.plot ( np.arange(1095), vanilla_dalec[ 11+i, :-1], '--k', label="No DA" )
         ax.set_title (pools[i], fontsize=12 )            
         ax.set_xlim ( 0, 1100 )
         ax.xaxis.set_ticklabels ([])
-        try:
-            if pools[i] == r'$C_f$':
-                d = np.loadtxt ( "meas_flux_cf.txt.gz" )
-                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
-                ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
-            elif pools[i] == r'$C_{lit}$':
-                d = np.loadtxt ( "meas_flux_cl.txt.gz" )
-                ax.plot ( d[:, 0], d[:,1], 'ko' )
-                ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
-            elif pools[i] == r'$C_w$':
-                d = np.loadtxt ( "meas_flux_cw.txt.gz" )
-                ax.plot ( d[:, 0], d[:,1], 'ko' )
-                ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
-            elif pools[i] == r'$C_r$':
-                d = np.loadtxt ( "meas_flux_cr.txt.gz" )
-                ax.plot ( d[:, 0], d[:,1], 'ko' )
-                ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
-        except:
-            pass
-
+        
+        if pools[i] == r'$C_f$':
+            d = np.loadtxt ( "meas_flux_cf.txt.gz" )
+            ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
+            ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
+            
+        elif pools[i] == r'$C_{lit}$':
+            d = np.atleast_2d ( np.loadtxt ( "meas_flux_cl.txt.gz" ) )
+            ax.plot ( d[:, 0], d[:,1], 'ko' )
+            ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
+            
+        elif pools[i] == r'$C_w$':
+            d = np.loadtxt ( "meas_flux_cw.txt.gz" )
+            ax.plot ( d[:, 0], d[:,1], 'ko' )
+            ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
+            
+        elif pools[i] == r'$C_r$':
+            d = np.loadtxt ( "meas_flux_cr.txt.gz" )
+            ax.plot ( d[:, 0], d[:,1], 'ko' )
+            ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
+            
+        
         pretty_axes ( ax )
     ax.xaxis.set_ticks([1,365, 365*2, 365*3])
     ax.xaxis.set_ticklabels([1,365, 365*2, 365*3])
@@ -248,18 +248,18 @@ def plot_pools_fluxes ( model, states, \
         ub = [ np.percentile(fwd_model[j,:,i+5], 75) for j in xrange(1095)]
         ax.fill_between ( np.arange(1095), lb, ub,color=clist[i],  alpha=0.7  )
         ax.plot([], [],  color=clist[i], alpha=0.7, linewidth=10, label="25-75% CI")
+        ax.plot ( np.arange(1095), vanilla_dalec[ i + 5, :-1], '--k', label="No DA" )
         ax.set_ylabel(r'$[gCm^{-2}d^{-1}]$')
-        try:
-            if pools[i] == r'$L_f$':
-                d = np.loadtxt ( "meas_flux_lf.txt.gz" )
-                ax.plot ( d[:, 0], d[:,1], 'ko' )
-                ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
-            elif pools[i] == r'$L_w$':
-                d = np.loadtxt ( "meas_flux_lw.txt.gz" )
-                ax.plot ( d[:, 0], d[:,1], 'ko' )
-                ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
-        except:
-            pass
+
+        if fluxes2[i] == r'$L_f$':
+            d = np.loadtxt ( "meas_flux_lf.txt.gz" )
+            ax.plot ( d[:, 0], d[:,1], 'ko' )
+            ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
+            
+        elif fluxes2[i] == r'$L_w$':
+            d = np.loadtxt ( "meas_flux_lw.txt.gz" )
+            ax.plot ( d[:, 0], d[:,1], 'ko' )
+            ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
 
 
         ax.set_title (fluxes2[i], fontsize=12 )            
