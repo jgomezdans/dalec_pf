@@ -372,4 +372,4 @@ def assimilate_and_plot ( sla=110, n_particles=150, Cf0=58., Cr0=102., Cw0=770.,
     
     pf_plots ( DALEC, observations, results )
     
-    return results
+    return DALEC, observations, results
