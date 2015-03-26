@@ -149,7 +149,8 @@ class Observations ( object ):
                                 0.5*( lai - obs)**2/obs_unc**2
                     else:
                         # Not LAI
-                        
+                        obs_unc = obs*obs_unc # Apparently...
+                        print current_timestep, obs_stream, proposed_candidate, obs, obs_unc
                         log_proposed += - safe_log ( 2.*np.pi*obs_unc ) - \
                                 0.5*( proposed_candidate[i] - obs)**2/obs_unc**2
         return log_proposed
@@ -355,7 +356,17 @@ def assimilate( sla=110, n_particles=150, Cf0=58., Cr0=102., Cw0=770.,\
     print "Assimilation done in %d seconds" % ( time.time() - t0 )
     return DALEC, observations, results
     
-if __name__ == "__main__":
+def assimilate_and_plot ( sla=110, n_particles=150, Cf0=58., Cr0=102., Cw0=770.,\
+         Clit0=40., Csom0=9897., \
+         Cfunc=5, Crunc=10, Cwunc=77, Clitunc=20, Csomunc=100, \
+         do_lai=True, do_cw=False, do_cr=False, do_cf=False, do_cl=False, do_csom=False, \
+         lai_thin=0, lai_unc_scalar=1.):
     from plot_utils import pf_plots
-    DALEC, observations, results = assimilate()
+    DALEC, observations, results = assimilate(sla=110, n_particles=150, \
+         Cf0=58., Cr0=102., Cw0=770.,\
+         Clit0=40., Csom0=9897., \
+         Cfunc=5, Crunc=10, Cwunc=77, Clitunc=20, Csomunc=100, \
+         do_lai=True, do_cw=False, do_cr=False, do_cf=False, do_cl=False, do_csom=False, \
+         lai_thin=0, lai_unc_scalar=1.)
+    
     pf_plots ( DALEC, observations, results )
