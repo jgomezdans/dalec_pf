@@ -65,11 +65,13 @@ class Observations ( object ):
         
 
     def set_lai_options ( self, sla, lai_unc_scalar, lai_thin, lai_start, lai_end ):
+        """Sets LAI options, e.g.thinning, subsettting, scaling uncertainty, setting SLA..."""
         
         self.sla = sla
         self.lai_unc_scalar = lai_unc_scalar
-        self.fluxes['lai'] = self.fluxes['lai'][::lai_thin, :]
-        lai_pass = np.logical_and (  self.fluxes['lai'][:,0] > lai_start, self.fluxes['lai'][:,0] > lai_end )
+        if lai_thin > 0:
+            self.fluxes['lai'] = self.fluxes['lai'][::lai_thin, :]
+        lai_pass = np.logical_and (  self.fluxes['lai'][:,0] > lai_start, self.fluxes['lai'][:,0] < lai_end )
         self.fluxes['lai'] = self.fluxes['lai'][lai_pass,:]
     def has_obs ( self, current_timestep, obs_to_assim ):
         """A method to see wether there are observations to assimilate in the
@@ -316,7 +318,11 @@ def assimilate( sla=110, n_particles=150, Cf0=58., Cr0=102., Cw0=770.,\
          Clit0=40., Csom0=9897., \
          Cfunc=5, Crunc=10, Cwunc=77, Clitunc=20, Csomunc=100, \
          do_lai=True, do_cw=False, do_cr=False, do_cf=False, do_cl=False, do_csom=False, \
-         lai_thin=0, lai_start=0, lai_start=1096, lai_unc_scalar=1.):
+         lai_thin=0, lai_start=0, lai_end=1096, lai_unc_scalar=1.):
+    """
+    
+    
+    """
     
     t0 = time.time()
     # The following sets the fluxes we would like to assimilate
