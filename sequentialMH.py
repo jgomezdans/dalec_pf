@@ -360,7 +360,9 @@ def assimilate_and_plot ( sla=110, n_particles=150, Cf0=58., Cr0=102., Cw0=770.,
          Cfunc=5, Crunc=10, Cwunc=77, Clitunc=20, Csomunc=100, \
          do_lai=True, do_cw=False, do_cr=False, do_cf=False, do_cl=False, do_csom=False, \
          lai_thin=0, lai_unc_scalar=1.):
+    
     from plot_utils import pf_plots
+    
     DALEC, observations, results = assimilate(sla=110, n_particles=150, \
          Cf0=58., Cr0=102., Cw0=770.,\
          Clit0=40., Csom0=9897., \
@@ -369,3 +371,5 @@ def assimilate_and_plot ( sla=110, n_particles=150, Cf0=58., Cr0=102., Cw0=770.,
          lai_thin=0, lai_unc_scalar=1.)
     
     pf_plots ( DALEC, observations, results )
+    
+    return results
