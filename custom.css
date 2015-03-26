@@ -64,6 +64,12 @@
         border-left: 5px solid #dfb5b4;
         padding: 0.5em;
         }  
+    div.question {
+        background-color: #C2E0C2;
+	border-color: #669900 ;
+        border-left: 5px solid #669900 ;
+        padding: 0.5em ;
+        } 
 </style>
 <script>
     MathJax.Hub.Config({
