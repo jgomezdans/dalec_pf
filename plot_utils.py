@@ -2,7 +2,7 @@
 import json
 import numpy as np
 import matplotlib.pyplot as plt
-from dalec import *
+from dalec import dalec, test_dalec
 
 __author__ = "J Gomez-Dans"
 __version__ = "1.0 (09.03.2015)"
@@ -72,11 +72,69 @@ def pretty_axes( ax ):
 
     ax.tick_params(axis="both", which="both", bottom="off", top="off",  
             labelbottom="on", left="off", right="off", labelleft="on")  
+    
+def plot_dalec ( outputs ):
+    pools = [r'$NEE$', r'$GPP$',  '$Ra$', '$Rh_1 + Rh_2$', '$A_f$','$A_r$', \
+        '$A_w$','$L_f$', '$L_r$', '$L_w$', '$D$',\
+        r'$C_f$',r'$C_r$',r'$C_w$',r'$C_{lit}$',r'$C_{SOM}$']
+    doys = np.arange( outputs.shape[1] )
+    tx = np.arange ( len(doys))
+    fig, axs = plt.subplots (nrows=4, ncols=4, sharex="col", figsize=(11,13) )
+    
+    for i, ax in enumerate(axs.flatten() ):
+        pretty_axes ( ax )
+        ax.plot ( tx, outputs[ i, :], '-' )
+        ax.set_title (pools[i], fontsize=12 )
+        
+        try:
+            if pools[i] == r'$C_f$':
+                d = np.loadtxt ( "meas_flux_cf.txt.gz" )
+                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
+                
+            elif pools[i] == r'$C_{lit}$':
+                d = np.loadtxt ( "meas_flux_cl.txt.gz" )
+                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
+                
+            elif pools[i] == r'$C_w$':
+                d = np.loadtxt ( "meas_flux_cw.txt.gz" )
+                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
+                
+            elif pools[i] == r'$C_r$':
+                d = np.loadtxt ( "meas_flux_cr.txt.gz" )
+                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
+                
+            elif pools[i] == r'$L_f$':
+                d = np.loadtxt ( "meas_flux_lf.txt.gz" )
+                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
+                
+            elif pools[i] == r'$GPP$':
+                d = np.loadtxt ( "meas_flux_gpp.txt.gz" )
+                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none")
+                
+            elif pools[i] == r'$NEE$':
+                d = np.loadtxt ( "meas_flux_nee.txt.gz" )
+                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none")
+                
+            elif pools[i] == r'$Ra$':
+                d = np.loadtxt ( "meas_flux_ra.txt.gz" )
+                ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
+                
+
+        except:
+            pass
+
+        ax.set_xlim ( 0, 1100 )
+        ax.xaxis.set_ticks([1,365, 365*2, 365*3])
+    plt.subplots_adjust ( wspace=0.4 )
+    
+    
+    
+    
 def plot_pools_fluxes ( model, states, \
     pools = [r'$C_f$',r'$C_r$',r'$C_w$',r'$C_{lit}$',r'$C_{SOM}$'] ):
     
     # Run the vanilla model and store the fluxes...
-    vanilla_dalec = test_dalec ( do_plots=False )
+    vanilla_dalec = test_dalec ( )
     fwd_model = np.zeros(( states.shape[0], states.shape[1], 16 ))
 
     clist = ["#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", \
@@ -216,7 +274,7 @@ def plot_pools_fluxes ( model, states, \
     
     return fig1, fig2, fig3, fwd_model
 
-def pf_plots ( results ):
+def pf_plots ( DALEC, observations, results ):
     """Plots the results of the assimilation using a particle filter"""
     fig = plt.figure(figsize=(13,7))
     fig.subplots_adjust(hspace=0.05)
@@ -224,25 +282,26 @@ def pf_plots ( results ):
     ax = plt.gca()
     clist = ["#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", \
              "#FFD92F", "#E5C494", "#B3B3B3" ]
-    lb = [ np.percentile(results[i,:,0]/110, 5) for i in xrange(1095)]
-    ub = [ np.percentile(results[i,:,0]/110, 95) for i in xrange(1095)]
+    lb = [ np.percentile(results[i,:,0]/observations.sla, 5) for i in xrange(1095)]
+    ub = [ np.percentile(results[i,:,0]/observations.sla, 95) for i in xrange(1095)]
     plt.fill_between ( np.arange(1095), lb, ub,color=clist[0],  alpha=0.2  )
     plt.plot([], [],  color=clist[0], alpha=0.2, linewidth=10, label="5-95% CI")
     
-    lb = [ np.percentile(results[i,:,0]/110, 25) for i in xrange(1095)]
-    ub = [ np.percentile(results[i,:,0]/110, 75) for i in xrange(1095)]
+    lb = [ np.percentile(results[i,:,0]/observations.sla, 25) for i in xrange(1095)]
+    ub = [ np.percentile(results[i,:,0]/observations.sla, 75) for i in xrange(1095)]
     plt.fill_between ( np.arange(1095), lb,ub,  color=clist[0], alpha=0.6)
     plt.plot([], [], alpha=0.6, linewidth=10, color=clist[0], label="25-75% CI")
-    m = [ np.percentile(results[i,:,0]/110, 50) for i in xrange(1095)]
+    m = [ np.percentile(results[i,:,0]/observations.sla, 50) for i in xrange(1095)]
     plt.plot(np.arange(1095), m, ls='-', color=clist[1], lw=1.8, label="Mean DA state" )
-    plt.plot(lai_time, lai_obs, 'o', color=clist[2],label="MODIS LAI")
-    plt.vlines ( lai_time, lai_obs - lai_unc, lai_obs + lai_unc,color=clist[2], )
+    plt.plot( observations.fluxes['lai'][:,0], observations.fluxes['lai'][:,1], \
+        'o', color=clist[2],label="MODIS LAI")
+    plt.vlines ( observations.fluxes['lai'][:,0], observations.fluxes['lai'][:,1] - \
+        observations.fluxes['lai'][:,2], observations.fluxes['lai'][:,1] + \
+        observations.fluxes['lai'][:,2],color=clist[2] )
     plt.xlabel("Days after 01/01/2000")
     plt.ylabel("LAI $[m^2\cdot m^{-2}]$")
     plt.legend(loc="upper left", fancybox=True, numpoints=1 )
     ax = plt.gca()
     pretty_axes ( ax )
     fig2, fig3, fig4, fwd_model = plot_pools_fluxes ( DALEC, results )
-    elapsed_time = time.time() - t0
-    print "Assimilation finished! Took %d seconds" % elapsed_time
     return fwd_model
