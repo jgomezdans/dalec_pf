@@ -64,12 +64,13 @@ class Observations ( object ):
             np.array ( lai_unc )]
         
 
-    def set_lai_options ( self, sla, lai_unc_scalar, lai_thin ):
+    def set_lai_options ( self, sla, lai_unc_scalar, lai_thin, lai_start, lai_end ):
         
         self.sla = sla
         self.lai_unc_scalar = lai_unc_scalar
-        self.lai_thin = lai_thin
-        
+        self.fluxes['lai'] = self.fluxes['lai'][::lai_thin, :]
+        lai_pass = np.logical_and (  self.fluxes['lai'][:,0] > lai_start, self.fluxes['lai'][:,0] > lai_end )
+        self.fluxes['lai'] = self.fluxes['lai'][lai_pass,:]
     def has_obs ( self, current_timestep, obs_to_assim ):
         """A method to see wether there are observations to assimilate in the
         queried timestep ``current_timestep``, provided these observation
@@ -252,8 +253,6 @@ def assimilate_obs ( timestep, ensemble, observations, model, model_unc, obs_to_
         proposed = model ( ensemble[part_sel[particle],:], timestep )[-5:] + \
                     np.random.randn( state_size )*model_unc
         while np.any ( proposed < 0 ):
-            
-            print particle, proposed, np.any ( proposed < 0 )
             # Clips -ve values, that make no sense here
             proposed = model ( ensemble[part_sel[particle],:], timestep )[-5:] + \
                     np.random.randn( state_size )*model_unc
@@ -317,7 +316,7 @@ def assimilate( sla=110, n_particles=150, Cf0=58., Cr0=102., Cw0=770.,\
          Clit0=40., Csom0=9897., \
          Cfunc=5, Crunc=10, Cwunc=77, Clitunc=20, Csomunc=100, \
          do_lai=True, do_cw=False, do_cr=False, do_cf=False, do_cl=False, do_csom=False, \
-         lai_thin=0, lai_unc_scalar=1.):
+         lai_thin=0, lai_start=0, lai_start=1096, lai_unc_scalar=1.):
     
     t0 = time.time()
     # The following sets the fluxes we would like to assimilate
@@ -344,7 +343,7 @@ def assimilate( sla=110, n_particles=150, Cf0=58., Cr0=102., Cw0=770.,\
     DALEC = Model ( params )
     
     observations = Observations ()
-    observations.set_lai_options ( sla, lai_unc_scalar, lai_thin )
+    observations.set_lai_options ( sla, lai_unc_scalar, lai_thin, lai_start, lai_end )
     
     s0 = x0[:, None] + \
        np.random.randn(5, n_particles)*model_unc[:, None]
@@ -357,20 +356,20 @@ def assimilate( sla=110, n_particles=150, Cf0=58., Cr0=102., Cw0=770.,\
     print "Assimilation done in %d seconds" % ( time.time() - t0 )
     return DALEC, observations, results
     
-def assimilate_and_plot ( sla=110, n_particles=150, Cf0=58., Cr0=102., Cw0=770.,\
+def assimilate_and_plot ( sla=110, n_particles=25, Cf0=58., Cr0=102., Cw0=770.,\
          Clit0=40., Csom0=9897., \
          Cfunc=5, Crunc=10, Cwunc=77, Clitunc=20, Csomunc=100, \
          do_lai=True, do_cw=False, do_cr=False, do_cf=False, do_cl=False, do_csom=False, \
-         lai_thin=0, lai_unc_scalar=1.):
+         lai_thin=0, lai_start=0, lai_end=1096, lai_unc_scalar=1.):
     
     from plot_utils import pf_plots
     
     DALEC, observations, results = assimilate(sla=110, n_particles=150, \
-         Cf0=58., Cr0=102., Cw0=770.,\
-         Clit0=40., Csom0=9897., \
-         Cfunc=5, Crunc=10, Cwunc=77, Clitunc=20, Csomunc=100, \
-         do_lai=True, do_cw=False, do_cr=False, do_cf=False, do_cl=False, do_csom=False, \
-         lai_thin=0, lai_unc_scalar=1.)
+         Cf0=Cf0, Cr0=Cr0, Cw0=Cw0,\
+         Clit0=Clit0, Csom0=Csom0, \
+         Cfunc=Cfunc, Crunc=Crunc, Cwunc=Cwunc, Clitunc=Clitunc, Csomunc=Csomunc, \
+         do_lai=do_lai, do_cw=do_cw, do_cr=do_cr, do_cf=do_cf, do_cl=do_cl, do_csom=do_csom, \
+         lai_thin=lai_thin, lai_start=lai_start, lai_end=lai_end, lai_unc_scalar=lai_unc_scalar)
     
     pf_plots ( DALEC, observations, results )
     
