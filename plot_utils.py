@@ -159,7 +159,8 @@ def plot_pools_fluxes ( model, states, \
         ub = [ np.percentile(fwd_model[j,:,i], 75) for j in xrange(1095)]
         ax.fill_between ( np.arange(1095), lb, ub,color=clist[i],  alpha=0.7  )
         ax.plot([], [],  color=clist[i], alpha=0.7, linewidth=10, label="25-75% CI")
-        ax.set_title (fluxes[i], fontsize=12 )            
+        ax.set_title (fluxes[i], fontsize=12 ) 
+        
         ax.set_xlim ( 0, 1100 )
         ax.xaxis.set_ticklabels ([])
         try:
@@ -167,14 +168,17 @@ def plot_pools_fluxes ( model, states, \
                 d = np.loadtxt ( "meas_flux_gpp.txt.gz" )
                 ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
                 ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
+                ax.plot ( np.arange(1095), vanilla_dalec[ 1, :-1], '--k' )
             elif pools[i] == 'NEE':
                 d = np.loadtxt ( "meas_flux_nee.txt.gz" )
                 ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
                 ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
+                ax.plot ( np.arange(1095), vanilla_dalec[ 0, :-1], '--k' )
             elif pools[i] == 'Ra':
                 d = np.loadtxt ( "meas_flux_ra.txt.gz" )
                 ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
                 ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
+                ax.plot ( np.arange(1095), vanilla_dalec[ 2, :-1], '--k' )
         except:
             pass
         ax.set_ylabel(r'$[gCm^{-2}d^{-1}]$')
