@@ -251,7 +251,9 @@ def assimilate_obs ( timestep, ensemble, observations, model, model_unc, obs_to_
         # We store the proposed state in ``proposed`` (creative, yeah?)
         proposed = model ( ensemble[part_sel[particle],:], timestep )[-5:] + \
                     np.random.randn( state_size )*model_unc
-        while np.all ( proposed < 0 ):
+        while np.any ( proposed < 0 ):
+            
+            print particle, proposed, np.any ( proposed < 0 )
             # Clips -ve values, that make no sense here
             proposed = model ( ensemble[part_sel[particle],:], timestep )[-5:] + \
                     np.random.randn( state_size )*model_unc
@@ -298,7 +300,7 @@ def sequential_mh ( x0, \
                 new_state = model ( \
                     ensemble[particle, :], timestep )[-5:] + \
                     np.random.randn( state_size )*model_unc
-                while np.all ( new_state < 0 ):
+                while np.any ( new_state < 0 ):
                    new_state = model ( \
                         ensemble[particle, :], timestep )[-5:] + \
                        np.random.randn( state_size )*model_unc
