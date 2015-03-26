@@ -150,7 +150,6 @@ class Observations ( object ):
                     else:
                         # Not LAI
                         obs_unc = obs*obs_unc # Apparently...
-                        print current_timestep, obs_stream, proposed_candidate, obs, obs_unc
                         log_proposed += - safe_log ( 2.*np.pi*obs_unc ) - \
                                 0.5*( proposed_candidate[i] - obs)**2/obs_unc**2
         return log_proposed
