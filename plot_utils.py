@@ -127,9 +127,63 @@ def plot_dalec ( outputs ):
         ax.xaxis.set_ticks([1,365, 365*2, 365*3])
     plt.subplots_adjust ( wspace=0.4 )
     
+def plot_fluxes ( model, states):
     
     
-    
+    # Run the vanilla model and store the fluxes...
+    vanilla_dalec = test_dalec ( )
+    fwd_model = np.zeros(( states.shape[0], states.shape[1], 16 ))
+
+    clist = ["#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", \
+             "#FFD92F", "#E5C494", "#B3B3B3" ]
+
+    for i in xrange ( states.shape[0] ):
+        for p in xrange ( states.shape[1] ):
+            fwd_model[i, p, :] = model.run_model ( states[i,p,:], i )
+
+    fig1, axs = plt.subplots (nrows=5, ncols=1, sharex="col", figsize=(10, 18) )
+    tx = np.arange ( states.shape[0] )
+    fluxes=["NEE", "GPP", "Ra", "Rh1", "Rh2"] 
+    for i, ax in enumerate(axs.flatten() ):
+        
+        ax.plot ( tx, fwd_model[:,:, i].mean(axis=1), '-', color=clist[i] )
+        
+        lb = [ np.percentile(fwd_model[j,:,i], 5) for j in xrange(1095)]
+        ub = [ np.percentile(fwd_model[j,:,i], 95) for j in xrange(1095)]
+        ax.fill_between ( np.arange(1095), lb, ub,color=clist[i],  alpha=0.3  )
+        ax.plot([], [],  color=clist[i], alpha=0.3, linewidth=10, label="5-95% CI")
+        lb = [ np.percentile(fwd_model[j,:,i], 25) for j in xrange(1095)]
+        ub = [ np.percentile(fwd_model[j,:,i], 75) for j in xrange(1095)]
+        ax.fill_between ( np.arange(1095), lb, ub,color=clist[i],  alpha=0.7  )
+        ax.plot([], [],  color=clist[i], alpha=0.7, linewidth=10, label="25-75% CI")
+        ax.plot ( np.arange(1095), vanilla_dalec[ i, :-1], '--k', label="No DA" )
+        ax.set_title (fluxes[i], fontsize=12 ) 
+        
+        ax.set_xlim ( 0, 1100 )
+        ax.xaxis.set_ticklabels ([])
+        if fluxes[i] == 'GPP':
+            d = np.loadtxt ( "meas_flux_gpp.txt.gz" )
+            ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
+            ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
+            ax.plot ( np.arange(1095), vanilla_dalec[ i, :-1], '--', c="0.8", alpha=0.5 )
+        elif fluxes[i] == 'NEE':
+            d = np.loadtxt ( "meas_flux_nee.txt.gz" )
+            ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
+            ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
+            ax.plot ( np.arange(1095), vanilla_dalec[ i, :-1], '--', c="0.8", alpha=0.5 )
+        elif fluxes[i] == 'Ra':
+            d = np.loadtxt ( "meas_flux_ra.txt.gz" )
+            ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
+            ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
+            ax.plot ( np.arange(1095), vanilla_dalec[ i, :-1], '--', c="0.8", alpha=0.5 )
+        ax.set_ylabel(r'$[gCm^{-2}d^{-1}]$')
+        pretty_axes ( ax )
+    ax.xaxis.set_ticks([1,365, 365*2, 365*3])
+    ax.xaxis.set_ticklabels([1,365, 365*2, 365*3])
+    ax.set_xlabel("Days after 01/01/2000")
+    plt.subplots_adjust ( wspace=0.3 )
+
+
 def plot_pools_fluxes ( model, states, \
     pools = [r'$C_f$',r'$C_r$',r'$C_w$',r'$C_{lit}$',r'$C_{SOM}$'] ):
     
@@ -144,7 +198,7 @@ def plot_pools_fluxes ( model, states, \
         for p in xrange ( states.shape[1] ):
             fwd_model[i, p, :] = model.run_model ( states[i,p,:], i )
 
-    fig1, axs = plt.subplots (nrows=5, ncols=1, sharex="col", figsize=(13,7) )
+    fig1, axs = plt.subplots (nrows=5, ncols=1, sharex="col", figsize=(13,18) )
     tx = np.arange ( states.shape[0] )
     fluxes=["NEE", "GPP", "Ra", "Rh1", "Rh2"] + pools
     for i, ax in enumerate(axs.flatten() ):
@@ -187,7 +241,7 @@ def plot_pools_fluxes ( model, states, \
     plt.subplots_adjust ( wspace=0.3 )
 
 
-    fig2, axs = plt.subplots (nrows=5, ncols=1, figsize=(13,7) )
+    fig2, axs = plt.subplots (nrows=5, ncols=1, figsize=(13,18) )
         
     for i, ax in enumerate(axs.flatten() ):
         pretty_axes ( ax )
@@ -234,7 +288,7 @@ def plot_pools_fluxes ( model, states, \
     plt.subplots_adjust ( wspace=0.3 )
     ax.set_xlabel("Days after 01/01/2000")
     
-    fig3, axs = plt.subplots (nrows=2, ncols=3, figsize=(13,7) )
+    fig3, axs = plt.subplots (nrows=2, ncols=3, figsize=(13,18) )
     fluxes2=[r'$A_f$',r'$A_r$', r'$A_w$',r'$L_f$',r'$L_r$',r'$L_w$','$D$' ]
     for i, ax in enumerate(axs.flatten() ):
         pretty_axes ( ax )
@@ -280,7 +334,7 @@ def plot_pools_fluxes ( model, states, \
 
 def pf_plots ( DALEC, observations, results ):
     """Plots the results of the assimilation using a particle filter"""
-    fig = plt.figure(figsize=(13,7))
+    fig = plt.figure(figsize=(13,18))
     fig.subplots_adjust(hspace=0.05)
     fig.subplots_adjust(wspace=0.08) 
     ax = plt.gca()
