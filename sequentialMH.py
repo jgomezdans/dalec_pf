@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 import numpy as np
-import matplotlib.pyplot as plt
 import time
+from dalec import dalec
 
-from dalec import dalec, test_dalec
-from plot_utils import pretty_axes
 
 
 __author__ = "J Gomez-Dans"
@@ -19,7 +17,7 @@ def safe_log(x, minval=0.0000000001):
 
 class Observations ( object ):
     """A storage for the observational data"""
-    def __init__ ( self, fname="dalec_drivers.OREGON.MW_obs.dat" ):
+    def __init__ ( self, fname="dalec_drivers.OREGON.MW_obs.dat", verbose=False ):
         """This is an utility function that extracts the observations 
         from the original ASCII file.
         """
@@ -38,7 +36,8 @@ class Observations ( object ):
         
         for flux in fluxes.iterkeys():
             if len( fluxes[flux] ) > 0:
-                print "Saving obs stream: %s (%d obs)" % ( flux, len( fluxes[flux] ) )
+                if verbose:
+                    print "Saving obs stream: %s (%d obs)" % ( flux, len( fluxes[flux] ) )
                 np.savetxt ( "meas_flux_%s.txt.gz" % flux, fluxes[flux] )
         self.fluxes = {}
         for flux in ["lai", "gpp","nee", "ra", "af", "aw", "ar", "lf", "lw","lr","cf","cw","cr",\
@@ -55,7 +54,6 @@ class Observations ( object ):
         lai_obs = []
         lai_unc = []
         lai_time = []
-        time_track = 1
         for i in xrange( d.shape[0] ):
             year = d[i,0]
             if year < 2003:
@@ -64,7 +62,98 @@ class Observations ( object ):
                 lai_time.append ( d[i,1] + (d[i,0]-2000)*365 )
         self.fluxes['lai'] = np.c_[np.array ( lai_time ), np.array ( lai_obs ), \
             np.array ( lai_unc )]
-        print self.fluxes['lai']            
+        
+
+    def set_lai_options ( self, sla, lai_unc_scalar, lai_thin ):
+        
+        self.sla = sla
+        self.lai_unc_scalar = lai_unc_scalar
+        self.lai_thin = lai_thin
+        
+    def has_obs ( self, current_timestep, obs_to_assim ):
+        """A method to see wether there are observations to assimilate in the
+        queried timestep ``current_timestep``, provided these observation
+        streams are indeed assimilated according to ``obs_to_assim``
+        
+        Parameters
+        -------------
+        current_timestep: int
+            The currrent timestep
+        obs_to_assim: array
+            A boolean array with observation streams to assimilate
+            
+        Returns
+        --------
+        Returns True if **any** of the selected assimilation streams in ``obs_to_assim``
+        has an observation. Otherwise, returns False
+        """
+        
+        # Loop over all available observations
+        for i, obs_stream in enumerate ( ["lai", "cf", "cr", "cw", "cl", "csom"] ):
+            if obs_to_assim[i]: # If we are assimilating this observation...
+                if np.in1d ( current_timestep, self.fluxes[obs_stream][:,0] ):
+                    # We have an observations for a flux in this time step
+                    # Stop here and return true
+                    return True
+        # No observations for this time step in any of the assimilated fluxes...
+        # Return false
+        return False
+    
+    def calc_likelihood ( self, proposed_candidate, current_timestep, obs_to_assim ):
+        """This method calculates the log-likelihood. The method is a bit specialist, as
+        it will deal with some stuff of interest in the LAI record.
+        
+        Parameters
+        ------------
+        proposed_candidate: array
+            This is the proposed candidate state vector, subset in the order of
+            LAI, Cw, Cr, Cf, Cl (we are not assimilating other pools/fluxes)
+        current_timestep: int 
+            The current timestep (1..1095 in the experiment)
+        obs_to_assim: array
+            Boolean array with observations to assimilate
+        sla: float
+            The specific leaf area (or LMA, can't quite remember)
+        lai_unc_scalar: float
+            A scalar to inflate LAI uncertainty, useful for some experiments
+            
+        Returns
+        --------
+        
+        The log-likelihood for the particular proposed candidate, for the current time
+        step, using all available observations in that timestep (and assuming they are 
+        independent).
+        """
+        
+        
+        log_proposed = 0.
+        for i, obs_stream in enumerate ( ["lai", "cf", "cr", "cw", "cl", "csom"] ):
+            if obs_to_assim[i]: # If we are assimilating this observation...
+                if np.in1d ( current_timestep, self.fluxes[obs_stream][:,0] ):
+                    # Location of the observation in the self.fluxes arrray
+                    # Also grab the observation and associated uncertainties
+                    # from the relevant array
+                    passer = self.fluxes[obs_stream][:,0] == current_timestep
+                    obs_unc = self.fluxes[obs_stream][passer,2]
+                    obs = self.fluxes[obs_stream][passer,1]
+                    if obs_stream == "lai":
+                        lai = proposed_candidate[i]/self.sla # Using SLA directly here...
+                        if lai < 0:
+                            # Out of bounds
+                            log_proposed = -np.inf
+                        else:
+                            # Calculate the (log)likelihood
+                            obs_unc *= self.lai_unc_scalar
+                            
+                            log_proposed += - safe_log ( 2.*np.pi*obs_unc ) - \
+                                0.5*( lai - obs)**2/obs_unc**2
+                    else:
+                        # Not LAI
+                        
+                        log_proposed += - safe_log ( 2.*np.pi*obs_unc ) - \
+                                0.5*( proposed_candidate[i] - obs)**2/obs_unc**2
+        return log_proposed
+                        
     
         
 class Model ( object ):
@@ -132,24 +221,27 @@ class Model ( object ):
 
         return ( nee, gpp, Ra, Rh1, Rh2, Af, Ar, Aw, Lw, Lr, D, \
             Cf, Cr, Cw, Clit, Csom )
-
-
-
-def assimilate_obs ( timestep, ensemble, model, model_unc,  obs, obs_unc ):
     
+
+
+
+def assimilate_obs ( timestep, ensemble, observations, model, model_unc, obs_to_assim ):
+    """A function to assimilate all available observations for a particular
+    time step, where there is at least one observation available. This
+    function takes care of advancing the model (e.g. DALEC) forward, add
+    the stochastic forcing, and so on"""
     
     # Get the number of particles
     n_particles, state_size= ensemble.shape
     # The assimilated state will be stored here
     x = ensemble*0. 
+    
     # The first particle is the median of the old state to start with
-    x[0,:] = np.median ( ensemble, axis=0 )
-    # Also get what the LAI of the median would be, using the SLA
-    lai = x[0,0]/110.
-    # Calculate the (log)likelihood
-    log_prev = - safe_log ( 2.*np.pi*obs_unc ) -0.5*( lai - obs)**2/obs_unc**2
+    proposed = np.median ( ensemble, axis=0 )
+    log_prev = observations.calc_likelihood ( proposed, timestep, obs_to_assim )
     # Store the initial state
-    proposed_prev = x[0,:]
+    proposed_prev = proposed
+    x[ 0, : ] = proposed
     # Next, we have a way of selecting random particles from the array
     part_sel = np.zeros ( n_particles, dtype=int )
     part_sel[1:] = np.random.choice(np.arange(n_particles),size=n_particles-1)
@@ -163,15 +255,9 @@ def assimilate_obs ( timestep, ensemble, model, model_unc,  obs, obs_unc ):
             # Clips -ve values, that make no sense here
             proposed = model ( ensemble[part_sel[particle],:], timestep )[-5:] + \
                     np.random.randn( state_size )*model_unc
-        # Calculate the predicted observations, using our (embarrassing) 
-        # observation operator, in this case, divide by SLA
-        lai = proposed[0]/110. # Using SLA directly here...
-        if lai < 0:
-            # Out of bounds
-            log_proposed = -np.inf
-        else:
-            # Calculate the (log)likelihood
-            log_proposed = - safe_log ( 2.*np.pi*obs_unc ) -0.5*( lai - obs)**2/obs_unc**2
+        # Calculate the log-likelihood
+        log_proposed = observations.calc_likelihood ( proposed, timestep, obs_to_assim )
+        
         # Metropolis acceptance scheme
         alpha = min ( 1, np.exp ( log_proposed - log_prev ) )
         u = np.random.rand()
@@ -192,21 +278,18 @@ def assimilate_obs ( timestep, ensemble, model, model_unc,  obs, obs_unc ):
 
 def sequential_mh ( x0, \
                     model, model_unc, \
-                    observations, obs_unc, \
-                    time_axs, obs_time ):
+                    observations, obs_to_assim, \
+                    time_axs ):
 
     n_particles, state_size = x0.shape
     ensemble = x0
     state = np.zeros ( ( len(time_axs), n_particles, state_size ))
     for timestep in time_axs:
         # Check whether we have an observation for this time step
-        
-        if np.in1d ( timestep, obs_time ):
-
-            obs_loc = np.nonzero( obs_time == timestep )[0]
+        if observations.has_obs ( timestep, obs_to_assim ):
             state[ timestep, :, : ] = assimilate_obs ( timestep, \
-                ensemble, model, model_unc, \
-                observations[obs_loc], obs_unc[obs_loc] )
+                ensemble, observations,  model, model_unc, \
+                obs_to_assim )
 
         else:
             # No observation, just advance the model for all the particles
@@ -228,19 +311,21 @@ def sequential_mh ( x0, \
 
 
 
-def assimilate( sla=110, n_particles=750, Cf0=58., Cr0=102., Cw0=770.,\
-                Clit0=40., Csom0=9897., \
-                Cfunc=5, Crunc=10, Cwunc=77, Clitunc=20, Csomunc=100, \
-                do_lai=True, do_cw=False, do_cr=False, do_cf=False, do_cl=False,
-                lai_thin=0, lai_unc_scalar=1.):
+def assimilate( sla=110, n_particles=150, Cf0=58., Cr0=102., Cw0=770.,\
+         Clit0=40., Csom0=9897., \
+         Cfunc=5, Crunc=10, Cwunc=77, Clitunc=20, Csomunc=100, \
+         do_lai=True, do_cw=False, do_cr=False, do_cf=False, do_cl=False, do_csom=False, \
+         lai_thin=0, lai_unc_scalar=1.):
+    
     t0 = time.time()
     # The following sets the fluxes we would like to assimilate
-    obs_to_assim = np.zeros(5).astype ( np. bool )
+    obs_to_assim = np.zeros(6).astype ( np. bool )
     obs_to_assim[0] = do_lai
-    obs_to_assim[1] = do_cw
+    obs_to_assim[1] = do_cf
     obs_to_assim[2] = do_cr
-    obs_to_assim[3] = do_cf
+    obs_to_assim[3] = do_cw
     obs_to_assim[4] = do_cl
+    obs_to_assim[5] = do_csom
     
     model_unc=np.array([Cfunc, Crunc, Cwunc, Clitunc, Csomunc])
     lat = 44.4 # Latitude
@@ -257,6 +342,7 @@ def assimilate( sla=110, n_particles=750, Cf0=58., Cr0=102., Cw0=770.,\
     DALEC = Model ( params )
     
     observations = Observations ()
+    observations.set_lai_options ( sla, lai_unc_scalar, lai_thin )
     
     s0 = x0[:, None] + \
        np.random.randn(5, n_particles)*model_unc[:, None]
@@ -264,7 +350,12 @@ def assimilate( sla=110, n_particles=750, Cf0=58., Cr0=102., Cw0=770.,\
     
     results = sequential_mh ( s0, \
                     DALEC.run_model, model_unc, \
-                    observations, \
+                    observations, obs_to_assim, \
                     np.arange(1095) )
+    print "Assimilation done in %d seconds" % ( time.time() - t0 )
+    return DALEC, observations, results
     
-    
+if __name__ == "__main__":
+    from plot_utils import pf_plots
+    DALEC, observations, results = assimilate()
+    pf_plots ( DALEC, observations, results )
