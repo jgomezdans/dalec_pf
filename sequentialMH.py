@@ -16,10 +16,13 @@ def safe_log(x, minval=0.0000000001):
     return np.log(x.clip(min=minval))
 
 class Observations ( object ):
-    """A storage for the observational data"""
+    """A storage for the observational data, plus calculations of the likelihood"""
     def __init__ ( self, fname="dalec_drivers.OREGON.MW_obs.dat", verbose=False ):
         """This is an utility function that extracts the observations 
-        from the original ASCII file.
+        from the original ASCII file. It can potentially take a different
+        text file, but really, if you wanted that, you might be better off re-writing
+        this method. ``verbose`` option is just for debugging & making sure things
+        are being read as they should.
         """
         fluxes = {}
         for flux in ["lai", "gpp","nee", "ra", "af", "aw", "ar", "lf", "lw","lr","cf","cw","cr",\
@@ -49,7 +52,8 @@ class Observations ( object ):
         
     def _read_LAI_obs ( self, fname="Metolius_MOD15_LAI.txt"):
         """This function reads the LAI data, and rejiggles it so that it is
-        in the same time axis as the drivers"""
+        in the same time axis as the drivers. Potentially, you could far more
+        years, but given that I can't be arsed to download flux data etc..."""
         d = np.loadtxt( fname )
         lai_obs = []
         lai_unc = []
@@ -65,7 +69,12 @@ class Observations ( object ):
         
 
     def set_lai_options ( self, sla, lai_unc_scalar, lai_thin, lai_start, lai_end ):
-        """Sets LAI options, e.g.thinning, subsettting, scaling uncertainty, setting SLA..."""
+        """Sets LAI options, e.g.thinning, subsettting, scaling uncertainty, setting SLA...
+        This is nasty, in the sense that it's only really useful for testing what the 
+        effect of these things will be on the assimilation experiment. We hope that the
+        date we get is properly characterised with uncertainties and what not. There, I
+        said it.
+        """
         
         self.sla = sla
         self.lai_unc_scalar = lai_unc_scalar
@@ -73,6 +82,7 @@ class Observations ( object ):
             self.fluxes['lai'] = self.fluxes['lai'][::lai_thin, :]
         lai_pass = np.logical_and (  self.fluxes['lai'][:,0] > lai_start, self.fluxes['lai'][:,0] < lai_end )
         self.fluxes['lai'] = self.fluxes['lai'][lai_pass,:]
+    
     def has_obs ( self, current_timestep, obs_to_assim ):
         """A method to see wether there are observations to assimilate in the
         queried timestep ``current_timestep``, provided these observation
@@ -232,7 +242,34 @@ def assimilate_obs ( timestep, ensemble, observations, model, model_unc, obs_to_
     """A function to assimilate all available observations for a particular
     time step, where there is at least one observation available. This
     function takes care of advancing the model (e.g. DALEC) forward, add
-    the stochastic forcing, and so on"""
+    the stochastic forcing, and so on. This is the assimilation part. In here,
+    we advance the ensemble of states into the current timestep using the
+    deterministic model (e.g. ecosystem model), adding an stochastic forcing
+    given by a multivariate random Gaussian, with mean 0, and diagonal covariance
+    given by ``model_unc``. We enforce that the state is strictly positive, and then
+    assimilate the observations that are available at this time step.
+    
+    Parameters
+    ------------
+    timestep: int 
+        The current timestep
+    ensemble: array
+        The state ensemble for this time step. Shape is ``n_particles`` times ``state_size``
+    observations: Observations object
+        An observations object that calculates likelihoods etc.
+    model: function
+        A model that advances the state given some forcings. Typically, it's some method in 
+        a class that stores the forcings, parameters etc. In this case, we use DALEC.
+    model_unc: array
+        An array (size ``state_size``) providing the variance of the model uncertainty, which
+        is assumed to be diagonal.
+    obs_to_assim: array
+        A boolean array indicating what observational streams are being assimilated.
+        
+    Returns
+    --------
+    The updated ensemble of particles after assimilation.
+    """
     
     # Get the number of particles
     n_particles, state_size= ensemble.shape
@@ -279,11 +316,36 @@ def assimilate_obs ( timestep, ensemble, observations, model, model_unc, obs_to_
     
     
 
-def sequential_mh ( x0, \
-                    model, model_unc, \
-                    observations, obs_to_assim, \
-                    time_axs ):
-
+def sequential_mh ( x0, model, model_unc, \
+                    observations, obs_to_assim, time_axs ):
+    """A sequential Metropolis Hastings function. This is the function
+    that does the assimilation. Starting from the first time step and the 
+    first estimate of the state ensemble (in ``x0``), the model is made 
+    to advance forward (with a stochastic forcing controlled by 
+    ``model_unc``). If observations of the observation streams that have
+    been selected to be assimilated are available, the ensemble of states
+    is passed on to ``assimilate_obs`` to assimilate the observations
+    
+    Parameters
+    ------------
+    x0: array
+        The initial guess of the state ensemble, size ``n_particles``, 
+        ``state_size``
+    model: function
+        The deterministic model (e.g. DALEC)
+    model_unc: array
+        The uncertainty of the model
+    observations: Observations class
+        A observations and likelihood calculation class.
+    obs_to_assim: array
+        A boolean array indicating what observational streams are being assimilated.
+    time_axs: array
+        An array with the entire temporal grid.
+        
+    Returns
+    --------
+    The time series of ensembles, an array of shape ``n_timesteps, n_particles, state_size``
+    """
     n_particles, state_size = x0.shape
     ensemble = x0
     state = np.zeros ( ( len(time_axs), n_particles, state_size ))
@@ -319,9 +381,62 @@ def assimilate( sla=110, n_particles=150, Cf0=58., Cr0=102., Cw0=770.,\
          Cfunc=5, Crunc=10, Cwunc=77, Clitunc=20, Csomunc=100, \
          do_lai=True, do_cw=False, do_cr=False, do_cf=False, do_cl=False, do_csom=False, \
          lai_thin=0, lai_start=0, lai_end=1096, lai_unc_scalar=1.):
-    """
+    """Assimilate data with a PF and the DALEC model. This function sets the experiment
+    up, and lets the user control the different assimilation parameters.
     
-    
+    Parameters
+    -----------------
+    sla: float
+        The specific leaf area (g/m^2)
+    n_particles: int 
+        The number of particles for the PF
+    Cf0: float
+        Intial value of the foliar carbon pool
+    Cr0: float
+        Intial value of the root carbon pool
+    Cw0: float
+        Intial value of the woody carbon pool
+    Clit0: float
+        Intial value of the litter carbon pool
+    Csom0: float
+        Intial value of the SOM carbon pool
+    Cfunc: float
+        Model uncertainty for the foliar carbon pool
+    Crunc: float
+        Model uncertainty for the root carbon pool
+    Cwunc: float
+        Model uncertainty for the woody carbon pool
+    Clitunc: float
+        Model uncertainty for the litter carbon pool
+    Csomunc: float
+        Model uncertainty for the SOM carbon pool
+    do_lai: boolean
+        Assimilate MODIS LAI observation stream
+    do_cw: boolean
+        Assimilate ground woody biomass observation stream
+    do_cr: boolean
+        Assimilate root biomass observation stream
+    do_cf: boolean
+        Assimilate ground foliar biomass observation stream
+    do_cl: boolean
+        Assimilate ground litter bservation stream
+    do_csom: boolean
+        Assimilate ground SOM observation stream
+    lai_thin: int 
+        Thin MODIS observations by this (e.g. take the [::lai_thin] elements)
+    lai_start: int 
+        Start of the period where MODIS LAI is assimilated
+    lai_end: int 
+        End of the period where MODIS LAI is assimilated
+    lai_unc_scalar: float
+        Scalar with which to scale the reported MODIS LAI uncertainty.
+        
+    Returns
+    ----------
+    This function returns the model function, the observations object,
+    as well as an array with the state ensemble after the assimilation.
+    This array is of shape ``n_timesteps, n_particles, state_size``
+
     """
     
     t0 = time.time()
@@ -367,6 +482,8 @@ def assimilate_and_plot ( sla=110, n_particles=25, Cf0=58., Cr0=102., Cw0=770.,\
          Cfunc=5, Crunc=10, Cwunc=77, Clitunc=20, Csomunc=100, \
          do_lai=True, do_cw=False, do_cr=False, do_cf=False, do_cl=False, do_csom=False, \
          lai_thin=0, lai_start=0, lai_end=1096, lai_unc_scalar=1.):
+    """ As above, but also does some plots. Useful for wrapping around HTML widgets in the 
+    IPython notebook."""
     
     from plot_utils import pf_plots
     
