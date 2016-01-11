@@ -25,3 +25,8 @@ If you're running this on a computer without ``git``, you can just download [the
 * Scipy
 
 These are all available from e.g. [Anaconda](http://continuum.io/downloads) standard distributions.
+
+### Using with Binder
+
+[![Binder](http://mybinder.org/badge.svg)](http://mybinder.org/repo/jgomezdans/dalec_pf)
+
