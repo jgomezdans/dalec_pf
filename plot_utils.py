@@ -137,8 +137,8 @@ def plot_fluxes ( model, states):
     clist = ["#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", \
              "#FFD92F", "#E5C494", "#B3B3B3" ]
 
-    for i in xrange ( states.shape[0] ):
-        for p in xrange ( states.shape[1] ):
+    for i in range ( states.shape[0] ):
+        for p in range ( states.shape[1] ):
             fwd_model[i, p, :] = model.run_model ( states[i,p,:], i )
 
     fig1, axs = plt.subplots (nrows=5, ncols=1, sharex="col", figsize=(10, 18) )
@@ -148,12 +148,12 @@ def plot_fluxes ( model, states):
         
         ax.plot ( tx, fwd_model[:,:, i].mean(axis=1), '-', color=clist[i] )
         
-        lb = [ np.percentile(fwd_model[j,:,i], 5) for j in xrange(1095)]
-        ub = [ np.percentile(fwd_model[j,:,i], 95) for j in xrange(1095)]
+        lb = [ np.percentile(fwd_model[j,:,i], 5) for j in range(1095)]
+        ub = [ np.percentile(fwd_model[j,:,i], 95) for j in range(1095)]
         ax.fill_between ( np.arange(1095), lb, ub,color=clist[i],  alpha=0.3  )
         ax.plot([], [],  color=clist[i], alpha=0.3, linewidth=10, label="5-95% CI")
-        lb = [ np.percentile(fwd_model[j,:,i], 25) for j in xrange(1095)]
-        ub = [ np.percentile(fwd_model[j,:,i], 75) for j in xrange(1095)]
+        lb = [ np.percentile(fwd_model[j,:,i], 25) for j in range(1095)]
+        ub = [ np.percentile(fwd_model[j,:,i], 75) for j in range(1095)]
         ax.fill_between ( np.arange(1095), lb, ub,color=clist[i],  alpha=0.7  )
         ax.plot([], [],  color=clist[i], alpha=0.7, linewidth=10, label="25-75% CI")
         ax.plot ( np.arange(1095), vanilla_dalec[ i, :-1], '--k', label="No DA" )
@@ -194,8 +194,8 @@ def plot_pools_fluxes ( model, states, \
     clist = ["#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", \
              "#FFD92F", "#E5C494", "#B3B3B3" ]
 
-    for i in xrange ( states.shape[0] ):
-        for p in xrange ( states.shape[1] ):
+    for i in range ( states.shape[0] ):
+        for p in range ( states.shape[1] ):
             fwd_model[i, p, :] = model.run_model ( states[i,p,:], i )
 
     fig1, axs = plt.subplots (nrows=5, ncols=1, sharex="col", figsize=(13,18) )
@@ -205,12 +205,12 @@ def plot_pools_fluxes ( model, states, \
         pretty_axes ( ax )
         ax.plot ( tx, fwd_model[:,:, i].mean(axis=1), '-', color=clist[i] )
         
-        lb = [ np.percentile(fwd_model[j,:,i], 5) for j in xrange(1095)]
-        ub = [ np.percentile(fwd_model[j,:,i], 95) for j in xrange(1095)]
+        lb = [ np.percentile(fwd_model[j,:,i], 5) for j in range(1095)]
+        ub = [ np.percentile(fwd_model[j,:,i], 95) for j in range(1095)]
         ax.fill_between ( np.arange(1095), lb, ub,color=clist[i],  alpha=0.3  )
         ax.plot([], [],  color=clist[i], alpha=0.3, linewidth=10, label="5-95% CI")
-        lb = [ np.percentile(fwd_model[j,:,i], 25) for j in xrange(1095)]
-        ub = [ np.percentile(fwd_model[j,:,i], 75) for j in xrange(1095)]
+        lb = [ np.percentile(fwd_model[j,:,i], 25) for j in range(1095)]
+        ub = [ np.percentile(fwd_model[j,:,i], 75) for j in range(1095)]
         ax.fill_between ( np.arange(1095), lb, ub,color=clist[i],  alpha=0.7  )
         ax.plot([], [],  color=clist[i], alpha=0.7, linewidth=10, label="25-75% CI")
         ax.plot ( np.arange(1095), vanilla_dalec[ i, :-1], '--k', label="No DA" )
@@ -247,12 +247,12 @@ def plot_pools_fluxes ( model, states, \
         pretty_axes ( ax )
         ax.plot ( tx, fwd_model[:, :,11+i].mean(axis=1), '-', color=clist[i] )
         
-        lb = [ np.percentile(fwd_model[j,:,i+11], 5) for j in xrange(1095)]
-        ub = [ np.percentile(fwd_model[j,:,i+11], 95) for j in xrange(1095)]
+        lb = [ np.percentile(fwd_model[j,:,i+11], 5) for j in range(1095)]
+        ub = [ np.percentile(fwd_model[j,:,i+11], 95) for j in range(1095)]
         ax.fill_between ( np.arange(1095), lb, ub,color=clist[i],  alpha=0.2  )
         ax.plot([], [],  color=clist[i], alpha=0.2, linewidth=10, label="5-95% CI")
-        lb = [ np.percentile(fwd_model[j,:,i+11], 25) for j in xrange(1095)]
-        ub = [ np.percentile(fwd_model[j,:,i+11], 75) for j in xrange(1095)]
+        lb = [ np.percentile(fwd_model[j,:,i+11], 25) for j in range(1095)]
+        ub = [ np.percentile(fwd_model[j,:,i+11], 75) for j in range(1095)]
         ax.fill_between ( np.arange(1095), lb, ub,color=clist[i],  alpha=0.7  )
         ax.plot([], [],  color=clist[i], alpha=0.7, linewidth=10, label="25-75% CI")
         ax.set_ylabel(r'$[gCm^{-2}]$')
@@ -294,12 +294,12 @@ def plot_pools_fluxes ( model, states, \
         pretty_axes ( ax )
         ax.plot ( tx, fwd_model[:, :,5+i].mean(axis=1), '-', color=clist[i] )
         
-        lb = [ np.percentile(fwd_model[j,:,i+5], 5) for j in xrange(1095)]
-        ub = [ np.percentile(fwd_model[j,:,i+5], 95) for j in xrange(1095)]
+        lb = [ np.percentile(fwd_model[j,:,i+5], 5) for j in range(1095)]
+        ub = [ np.percentile(fwd_model[j,:,i+5], 95) for j in range(1095)]
         ax.fill_between ( np.arange(1095), lb, ub,color=clist[i],  alpha=0.2  )
         ax.plot([], [],  color=clist[i], alpha=0.2, linewidth=10, label="5-95% CI")
-        lb = [ np.percentile(fwd_model[j,:,i+5], 25) for j in xrange(1095)]
-        ub = [ np.percentile(fwd_model[j,:,i+5], 75) for j in xrange(1095)]
+        lb = [ np.percentile(fwd_model[j,:,i+5], 25) for j in range(1095)]
+        ub = [ np.percentile(fwd_model[j,:,i+5], 75) for j in range(1095)]
         ax.fill_between ( np.arange(1095), lb, ub,color=clist[i],  alpha=0.7  )
         ax.plot([], [],  color=clist[i], alpha=0.7, linewidth=10, label="25-75% CI")
         ax.plot ( np.arange(1095), vanilla_dalec[ i + 5, :-1], '--k', label="No DA" )
@@ -340,16 +340,16 @@ def pf_plots ( DALEC, observations, results ):
     ax = plt.gca()
     clist = ["#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", \
              "#FFD92F", "#E5C494", "#B3B3B3" ]
-    lb = [ np.percentile(results[i,:,0]/observations.sla, 5) for i in xrange(1095)]
-    ub = [ np.percentile(results[i,:,0]/observations.sla, 95) for i in xrange(1095)]
+    lb = [ np.percentile(results[i,:,0]/observations.sla, 5) for i in range(1095)]
+    ub = [ np.percentile(results[i,:,0]/observations.sla, 95) for i in range(1095)]
     plt.fill_between ( np.arange(1095), lb, ub,color=clist[0],  alpha=0.2  )
     plt.plot([], [],  color=clist[0], alpha=0.2, linewidth=10, label="5-95% CI")
     
-    lb = [ np.percentile(results[i,:,0]/observations.sla, 25) for i in xrange(1095)]
-    ub = [ np.percentile(results[i,:,0]/observations.sla, 75) for i in xrange(1095)]
+    lb = [ np.percentile(results[i,:,0]/observations.sla, 25) for i in range(1095)]
+    ub = [ np.percentile(results[i,:,0]/observations.sla, 75) for i in range(1095)]
     plt.fill_between ( np.arange(1095), lb,ub,  color=clist[0], alpha=0.6)
     plt.plot([], [], alpha=0.6, linewidth=10, color=clist[0], label="25-75% CI")
-    m = [ np.percentile(results[i,:,0]/observations.sla, 50) for i in xrange(1095)]
+    m = [ np.percentile(results[i,:,0]/observations.sla, 50) for i in range(1095)]
     plt.plot(np.arange(1095), m, ls='-', color=clist[1], lw=1.8, label="Mean DA state" )
     plt.plot( observations.fluxes['lai'][:,0], observations.fluxes['lai'][:,1], \
         'o', color=clist[2],label="MODIS LAI")

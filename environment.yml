@@ -1,0 +1,10 @@
+name: dalec_env
+
+dependencies:
+    - python=3.6
+    - jupyter
+    - numpy
+    - scipy
+    - matplotlib
+    - ipywidgets
+    - jupyter_contrib_nbextensions

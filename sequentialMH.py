@@ -37,10 +37,10 @@ class Observations ( object ):
             fluxes[flux] = np.array( this_flux )
             fp.close()
         
-        for flux in fluxes.iterkeys():
+        for flux in fluxes.keys():
             if len( fluxes[flux] ) > 0:
                 if verbose:
-                    print "Saving obs stream: %s (%d obs)" % ( flux, len( fluxes[flux] ) )
+                    print("Saving obs stream: %s (%d obs)" % ( flux, len( fluxes[flux] ) ))
                 np.savetxt ( "meas_flux_%s.txt.gz" % flux, fluxes[flux] )
         self.fluxes = {}
         for flux in ["lai", "gpp","nee", "ra", "af", "aw", "ar", "lf", "lw","lr","cf","cw","cr",\
@@ -58,7 +58,7 @@ class Observations ( object ):
         lai_obs = []
         lai_unc = []
         lai_time = []
-        for i in xrange( d.shape[0] ):
+        for i in range( d.shape[0] ):
             year = d[i,0]
             if year < 2003:
                 lai_obs.append ( d[i,2] )
@@ -286,7 +286,7 @@ def assimilate_obs ( timestep, ensemble, observations, model, model_unc, obs_to_
     part_sel = np.zeros ( n_particles, dtype=int )
     part_sel[1:] = np.random.choice(np.arange(n_particles),size=n_particles-1)
     # Main assimilation loop
-    for particle in xrange ( 1, n_particles ):
+    for particle in range ( 1, n_particles ):
         # Select one random particle, and advance it using the model.
         # We store the proposed state in ``proposed`` (creative, yeah?)
         proposed = model ( ensemble[part_sel[particle],:], timestep )[-5:] + \
@@ -358,7 +358,7 @@ def sequential_mh ( x0, model, model_unc, \
 
         else:
             # No observation, just advance the model for all the particles
-            for particle in xrange ( n_particles ):
+            for particle in range ( n_particles ):
                 
                 new_state = model ( \
                     ensemble[particle, :], timestep )[-5:] + \
@@ -474,7 +474,7 @@ def assimilate( sla=110, n_particles=150, Cf0=58., Cr0=102., Cw0=770.,\
                     DALEC.run_model, model_unc, \
                     observations, obs_to_assim, \
                     np.arange(1095) )
-    print "Assimilation done in %d seconds" % ( time.time() - t0 )
+    print("Assimilation done in %d seconds" % ( time.time() - t0 ))
     return DALEC, observations, results
     
 def assimilate_and_plot ( sla=110, n_particles=25, Cf0=58., Cr0=102., Cw0=770.,\
