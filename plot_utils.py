@@ -2,57 +2,17 @@
 import json
 import numpy as np
 import matplotlib.pyplot as plt
+from pathlib import Path
 from dalec import dalec, test_dalec
+
 
 __author__ = "J Gomez-Dans"
 __version__ = "1.0 (09.03.2015)"
 __email__ = "j.gomez-dans@ucl.ac.uk"
 
 
+DATA_DIR=Path("./data")
 
-
-
-def plot_config ():
-    """Update the MPL configuration"""
-    config_json='''{
-            "lines.linewidth": 2.0,
-            "axes.edgecolor": "#bcbcbc",
-            "patch.linewidth": 0.5,
-            "legend.fancybox": true,
-            "axes.color_cycle": [
-                "#FC8D62",
-                "#66C2A5",
-                "#8DA0CB",
-                "#E78AC3",
-                "#A6D854",
-                "#FFD92F",
-                "#E5C494",
-                "#B3B3B3"
-            ],
-            "axes.facecolor": "#eeeeee",
-            "axes.labelsize": "large",
-            "axes.grid": false,
-            "patch.edgecolor": "#eeeeee",
-            "axes.titlesize": "x-large",
-            "svg.embed_char_paths": "path",
-            "xtick.direction" : "out",
-            "ytick.direction" : "out",
-            "xtick.color": "#262626",
-            "ytick.color": "#262626",
-            "axes.edgecolor": "#262626",
-            "axes.labelcolor": "#262626",
-            "axes.labelsize": 12,
-            "font.size": 12,
-            "legend.fontsize": 12,
-            "xtick.labelsize": 12,
-            "ytick.labelsize": 12
-            
-    }
-    '''
-    s = json.loads ( config_json )
-    plt.rcParams.update(s)
-    plt.rcParams["axes.formatter.limits"] = [-4,4]
-    
 
 def pretty_axes( ax ):
     """This function takes an axis object ``ax``, and makes it purrty.
@@ -88,35 +48,35 @@ def plot_dalec ( outputs ):
         
         try:
             if pools[i] == r'$C_f$':
-                d = np.loadtxt ( "meas_flux_cf.txt.gz" )
+                d = np.loadtxt ( DATA_DIR/"meas_flux_cf.txt.gz" )
                 ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
                 
             elif pools[i] == r'$C_{lit}$':
-                d = np.loadtxt ( "meas_flux_cl.txt.gz" )
+                d = np.loadtxt ( DATA_DIR/"meas_flux_cl.txt.gz" )
                 ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
                 
             elif pools[i] == r'$C_w$':
-                d = np.loadtxt ( "meas_flux_cw.txt.gz" )
+                d = np.loadtxt ( DATA_DIR/"meas_flux_cw.txt.gz" )
                 ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
                 
             elif pools[i] == r'$C_r$':
-                d = np.loadtxt ( "meas_flux_cr.txt.gz" )
+                d = np.loadtxt ( DATA_DIR/"meas_flux_cr.txt.gz" )
                 ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
                 
             elif pools[i] == r'$L_f$':
-                d = np.loadtxt ( "meas_flux_lf.txt.gz" )
+                d = np.loadtxt ( DATA_DIR/"meas_flux_lf.txt.gz" )
                 ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
                 
             elif pools[i] == r'$GPP$':
-                d = np.loadtxt ( "meas_flux_gpp.txt.gz" )
+                d = np.loadtxt ( DATA_DIR/"meas_flux_gpp.txt.gz" )
                 ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none")
                 
             elif pools[i] == r'$NEE$':
-                d = np.loadtxt ( "meas_flux_nee.txt.gz" )
+                d = np.loadtxt ( DATA_DIR/"meas_flux_nee.txt.gz" )
                 ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none")
                 
             elif pools[i] == r'$Ra$':
-                d = np.loadtxt ( "meas_flux_ra.txt.gz" )
+                d = np.loadtxt ( DATA_DIR/"meas_flux_ra.txt.gz" )
                 ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
                 
 
@@ -162,19 +122,19 @@ def plot_fluxes ( model, states):
         ax.set_xlim ( 0, 1100 )
         ax.xaxis.set_ticklabels ([])
         if fluxes[i] == 'GPP':
-            d = np.loadtxt ( "meas_flux_gpp.txt.gz" )
-            ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
-            ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
+            d = np.loadtxt ( DATA_DIR/"meas_flux_gpp.txt.gz" )
+            ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none", alpha=0.5 )
+            ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], alpha=0.5 )
             ax.plot ( np.arange(1095), vanilla_dalec[ i, :-1], '--', c="0.8", alpha=0.5 )
         elif fluxes[i] == 'NEE':
-            d = np.loadtxt ( "meas_flux_nee.txt.gz" )
-            ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
-            ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
+            d = np.loadtxt ( DATA_DIR/"meas_flux_nee.txt.gz" )
+            ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" , alpha=0.5 )
+            ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], alpha=0.5 )
             ax.plot ( np.arange(1095), vanilla_dalec[ i, :-1], '--', c="0.8", alpha=0.5 )
         elif fluxes[i] == 'Ra':
-            d = np.loadtxt ( "meas_flux_ra.txt.gz" )
-            ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
-            ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
+            d = np.loadtxt ( DATA_DIR/"meas_flux_ra.txt.gz" )
+            ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none", alpha=0.5 )
+            ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], alpha=0.5 )
             ax.plot ( np.arange(1095), vanilla_dalec[ i, :-1], '--', c="0.8", alpha=0.5 )
         ax.set_ylabel(r'$[gCm^{-2}d^{-1}]$')
         pretty_axes ( ax )
@@ -219,17 +179,17 @@ def plot_pools_fluxes ( model, states, \
         ax.set_xlim ( 0, 1100 )
         ax.xaxis.set_ticklabels ([])
         if fluxes[i] == 'GPP':
-            d = np.loadtxt ( "meas_flux_gpp.txt.gz" )
+            d = np.loadtxt ( DATA_DIR/"meas_flux_gpp.txt.gz" )
             ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
             ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
             ax.plot ( np.arange(1095), vanilla_dalec[ i, :-1], '--k' )
         elif fluxes[i] == 'NEE':
-            d = np.loadtxt ( "meas_flux_nee.txt.gz" )
+            d = np.loadtxt ( DATA_DIR/"meas_flux_nee.txt.gz" )
             ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
             ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
             ax.plot ( np.arange(1095), vanilla_dalec[ i, :-1], '--k' )
         elif fluxes[i] == 'Ra':
-            d = np.loadtxt ( "meas_flux_ra.txt.gz" )
+            d = np.loadtxt ( DATA_DIR/"meas_flux_ra.txt.gz" )
             ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
             ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
             ax.plot ( np.arange(1095), vanilla_dalec[ i, :-1], '--k' )
@@ -262,22 +222,22 @@ def plot_pools_fluxes ( model, states, \
         ax.xaxis.set_ticklabels ([])
         
         if pools[i] == r'$C_f$':
-            d = np.loadtxt ( "meas_flux_cf.txt.gz" )
+            d = np.loadtxt ( DATA_DIR/"meas_flux_cf.txt.gz" )
             ax.plot ( d[:, 0], d[:,1], 'ko', mfc="none" )
             ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
             
         elif pools[i] == r'$C_{lit}$':
-            d = np.atleast_2d ( np.loadtxt ( "meas_flux_cl.txt.gz" ) )
+            d = np.atleast_2d ( np.loadtxt ( DATA_DIR/"meas_flux_cl.txt.gz" ) )
             ax.plot ( d[:, 0], d[:,1], 'ko' )
             ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
             
         elif pools[i] == r'$C_w$':
-            d = np.loadtxt ( "meas_flux_cw.txt.gz" )
+            d = np.loadtxt ( DATA_DIR/"meas_flux_cw.txt.gz" )
             ax.plot ( d[:, 0], d[:,1], 'ko' )
             ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
             
         elif pools[i] == r'$C_r$':
-            d = np.loadtxt ( "meas_flux_cr.txt.gz" )
+            d = np.loadtxt ( DATA_DIR/"meas_flux_cr.txt.gz" )
             ax.plot ( d[:, 0], d[:,1], 'ko' )
             ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
             
@@ -306,12 +266,12 @@ def plot_pools_fluxes ( model, states, \
         ax.set_ylabel(r'$[gCm^{-2}d^{-1}]$')
 
         if fluxes2[i] == r'$L_f$':
-            d = np.loadtxt ( "meas_flux_lf.txt.gz" )
+            d = np.loadtxt ( DATA_DIR/"meas_flux_lf.txt.gz" )
             ax.plot ( d[:, 0], d[:,1], 'ko' )
             ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
             
         elif fluxes2[i] == r'$L_w$':
-            d = np.loadtxt ( "meas_flux_lw.txt.gz" )
+            d = np.loadtxt ( DATA_DIR/"meas_flux_lw.txt.gz" )
             ax.plot ( d[:, 0], d[:,1], 'ko' )
             ax.vlines (d[:,0], d[:,1] - d[:,2], d[:,1]+d[:,2], )
 

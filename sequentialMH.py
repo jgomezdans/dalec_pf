@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import numpy as np
 import time
+from pathlib import Path
 from dalec import dalec
 
 
@@ -9,6 +10,7 @@ __author__ = "J Gomez-Dans"
 __version__ = "1.0 (09.03.2015)"
 __email__ = "j.gomez-dans@ucl.ac.uk"
 
+DATA_DIR=Path("./data")
     
 def safe_log(x, minval=0.0000000001):
     """This functions just does away with numerical 
@@ -24,36 +26,40 @@ class Observations ( object ):
         this method. ``verbose`` option is just for debugging & making sure things
         are being read as they should.
         """
+        fname=DATA_DIR/fname
         fluxes = {}
         for flux in ["lai", "gpp","nee", "ra", "af", "aw", "ar", "lf", "lw","lr","cf","cw","cr",\
             "rh1","rh2","decomp", "cl", "rs","rt", "npp","nep","agb","tbm"]:
-            fp = open( fname, 'r')
-            this_flux = []
-            for i, line in enumerate( fp ):
-                sline = line.split()
-                if sline.count( flux ) > 0:
-                    j = sline.index( flux )
-                    this_flux.append ( [ float(i), float(sline[j+1]), float(sline[j+2] ) ] )
-            fluxes[flux] = np.array( this_flux )
-            fp.close()
+            with open( fname, 'r') as fp:
+                this_flux = []
+                for i, line in enumerate( fp ):
+                    sline = line.split()
+                    if sline.count( flux ) > 0:
+                        j = sline.index( flux )
+                        this_flux.append ( [ float(i), float(sline[j+1]), float(sline[j+2] ) ] )
+                fluxes[flux] = np.array( this_flux )
+
         
         for flux in fluxes.keys():
             if len( fluxes[flux] ) > 0:
                 if verbose:
                     print("Saving obs stream: %s (%d obs)" % ( flux, len( fluxes[flux] ) ))
-                np.savetxt ( "meas_flux_%s.txt.gz" % flux, fluxes[flux] )
+                filename=DATA_DIR /f"meas_flux_{flux}.txt.gz"
+                np.savetxt ( filename, fluxes[flux] )
         self.fluxes = {}
         for flux in ["lai", "gpp","nee", "ra", "af", "aw", "ar", "lf", "lw","lr","cf","cw","cr",\
             "rh1","rh2","decomp", "cl", "rs","rt", "npp","nep","agb","tbm"]:
             if flux == "lai":
                 self._read_LAI_obs()
             elif len( fluxes[flux] ) > 0:
-                self.fluxes[flux] = np.loadtxt ( "meas_flux_%s.txt.gz" % flux )
+                filename=DATA_DIR /f"meas_flux_{flux}.txt.gz"
+                self.fluxes[flux] = np.loadtxt ( filename)
         
     def _read_LAI_obs ( self, fname="Metolius_MOD15_LAI.txt"):
         """This function reads the LAI data, and rejiggles it so that it is
         in the same time axis as the drivers. Potentially, you could far more
         years, but given that I can't be arsed to download flux data etc..."""
+        fname = DATA_DIR/fname
         d = np.loadtxt( fname )
         lai_obs = []
         lai_unc = []
@@ -180,6 +186,7 @@ class Model ( object ):
         2. SLA (specific leaf area)
         3+. These are ACM parameters (GPP/Photosynthesis internal model)
         """
+        drivers = DATA_DIR/drivers
         self.model_params = model_params
         self.drivers = self._process_drivers ( drivers )
         self.previous_state = []

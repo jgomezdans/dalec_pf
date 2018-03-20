@@ -175,7 +175,7 @@ def dalec ( doy, tmn, tmp, tmx, irad, ca, nitrogen, \
     
 def test_dalec( ):
     # Meteolius First Young Pine
-    driver_data = np.loadtxt ( "dalec_drivers.OREGON.no_obs.dat" )
+    driver_data = np.loadtxt ( "data/dalec_drivers.OREGON.no_obs.dat" )
     doys = driver_data[ :, 0 ] 
     temp = driver_data [ :, 1] 
     tmx = driver_data [ :, 2]
