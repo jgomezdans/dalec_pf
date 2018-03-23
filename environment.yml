@@ -7,4 +7,5 @@ dependencies:
     - scipy
     - matplotlib
     - ipywidgets
+    - nbpresent
     - jupyter_contrib_nbextensions
