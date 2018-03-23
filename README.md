@@ -1,3 +1,5 @@
+[![Binder](http://mybinder.org/badge.svg)](http://mybinder.org/repo/jgomezdans/dalec_pf/master)
+ 
 # Experiments with the DALEC ecosystem model and a sequential Metropolis particle filter
 
 ## J Gómez-Dans (NCEO & UCL)
