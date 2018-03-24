@@ -1,4 +1,4 @@
-[![Binder](http://mybinder.org/badge.svg)](http://mybinder.org/repo/jgomezdans/dalec_pf/master)
+[![Binder](http://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/jgomezdans/dalec_pf/master)
  
 # Experiments with the DALEC ecosystem model and a sequential Metropolis particle filter
 
@@ -30,5 +30,5 @@ These are all available from e.g. [Anaconda](http://continuum.io/downloads) stan
 
 ### Using with Binder
 
-[![Binder](http://mybinder.org/badge.svg)](http://mybinder.org/repo/jgomezdans/dalec_pf)
+[![Binder](http://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/jgomezdans/dalec_pf/master)
 
