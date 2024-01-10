@@ -24,14 +24,14 @@ def pretty_axes( ax ):
     ax.spines["right"].set_visible(False)              
     ax.spines["left"].set_visible(True)  
 
-    ax.get_xaxis().tick_bottom()  
-    ax.get_yaxis().tick_left()  
+    ax.xaxis.set_ticks_position('bottom')
+    ax.yaxis.set_ticks_position('left')
     loc = plt.MaxNLocator( 6 )
     ax.yaxis.set_major_locator( loc )
     
 
-    ax.tick_params(axis="both", which="both", bottom="off", top="off",  
-            labelbottom="on", left="off", right="off", labelleft="on")  
+    # ax.tick_params(axis="both", which="both", bottom="off", top="off",  
+    #         labelbottom="on", left="off", right="off", labelleft="on")  
     
 def plot_dalec ( outputs ):
     pools = [r'$NEE$', r'$GPP$',  '$Ra$', '$Rh_1 + Rh_2$', '$A_f$','$A_r$', \
